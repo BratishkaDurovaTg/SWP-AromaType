@@ -1,0 +1,22 @@
+.DS_Store
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# Go
+bin/
+coverage.out
+
+# Node / frontend
+node_modules/
+dist/
+build/
+.next/
+
+# IDE
+.idea/
+.vscode/
