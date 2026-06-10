@@ -10,7 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/auth"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/config"
+	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/database"
 	httpapi "github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/http"
 )
 
@@ -25,9 +27,26 @@ func main() {
 		os.Exit(1)
 	}
 
+	startupCtx, startupCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer startupCancel()
+
+	dbPool, err := database.Connect(startupCtx, cfg.DatabaseURL)
+	if err != nil {
+		logger.Error("failed to connect to database", "error", err)
+		os.Exit(1)
+	}
+	defer dbPool.Close()
+
+	if err := database.Migrate(startupCtx, dbPool); err != nil {
+		logger.Error("failed to apply database migrations", "error", err)
+		os.Exit(1)
+	}
+
+	authService := auth.NewService(auth.NewRepository(dbPool), cfg.JWTSecret, cfg.JWTTTL)
+
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           httpapi.NewRouter(cfg, logger),
+		Handler:           httpapi.NewRouter(cfg, logger, authService),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

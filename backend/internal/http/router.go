@@ -6,26 +6,31 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/auth"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/config"
 )
 
 const serviceVersion = "0.1.0"
 
 type Router struct {
-	cfg    config.Config
-	logger *slog.Logger
+	cfg         config.Config
+	logger      *slog.Logger
+	authService *auth.Service
 }
 
-func NewRouter(cfg config.Config, logger *slog.Logger) http.Handler {
+func NewRouter(cfg config.Config, logger *slog.Logger, authService *auth.Service) http.Handler {
 	router := &Router{
-		cfg:    cfg,
-		logger: logger,
+		cfg:         cfg,
+		logger:      logger,
+		authService: authService,
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", router.handleHealth)
 	mux.HandleFunc("GET /docs", router.handleDocs)
 	mux.HandleFunc("GET /openapi.yaml", router.handleOpenAPI)
+	mux.HandleFunc("POST /api/auth/register", router.handleRegister)
+	mux.HandleFunc("POST /api/auth/login", router.handleLogin)
 
 	return logRequests(logger, mux)
 }
@@ -57,6 +62,13 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	if err := json.NewEncoder(w).Encode(payload); err != nil {
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 	}
+}
+
+func writeError(w http.ResponseWriter, status int, code, message string) {
+	writeJSON(w, status, map[string]string{
+		"code":    code,
+		"message": message,
+	})
 }
 
 func logRequests(logger *slog.Logger, next http.Handler) http.Handler {
