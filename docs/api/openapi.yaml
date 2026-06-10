@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: AromaType API
+  version: 0.1.0
+  description: API contract for the AromaType backend MVP.
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Backend health check
+      operationId: getHealth
+      tags:
+        - System
+      responses:
+        "200":
+          description: Backend is running.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: ok
+                service: aromatype-backend
+                version: 0.1.0
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: aromatype-backend
+        version:
+          type: string
+          example: 0.1.0
