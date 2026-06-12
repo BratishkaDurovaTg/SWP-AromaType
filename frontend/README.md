@@ -1,10 +1,10 @@
-# Game Compass MVP v0
+# Aroma Type MVP v0
 
-Минимальная техническая основа проекта.
+Минимальная техническая основа frontend-части проекта Aroma Type.
 
 ## Что отображается
 
-- `Game Compass`
+- `Aroma Type`
 - `Опросник`
 - `App loaded`
 - `Telegram SDK connected` или `Browser fallback mode`
