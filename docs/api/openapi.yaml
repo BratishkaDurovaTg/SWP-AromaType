@@ -92,6 +92,56 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/questions:
+    get:
+      summary: Get questionnaire questions
+      operationId: getQuestions
+      tags:
+        - Questionnaire
+      responses:
+        "200":
+          description: Active questionnaire questions with answer options.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+  /api/recommendations:
+    post:
+      summary: Build fragrance recommendations
+      description: Builds a basic rule-based recommendation without LLM.
+      operationId: buildRecommendations
+      tags:
+        - Recommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationRequest"
+            example:
+              answerOptionIds:
+                - q1_a1
+                - q2_a1
+                - q3_a1
+                - q4_a2
+                - q5_a2
+                - q6_a1
+                - q7_a2
+      responses:
+        "200":
+          description: User aroma profile and recommended fragrances.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationResponse"
+        "400":
+          description: Invalid request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthResponse:
@@ -185,3 +235,142 @@ components:
         message:
           type: string
           example: Request validation failed.
+    Question:
+      type: object
+      required:
+        - id
+        - text
+        - type
+        - sortOrder
+        - options
+      properties:
+        id:
+          type: string
+          example: q1
+        text:
+          type: string
+          example: Если описать вас в трёх словах через аромат, что это будет?
+        type:
+          type: string
+          enum:
+            - single_choice
+            - multiple_choice
+          example: single_choice
+        sortOrder:
+          type: integer
+          example: 1
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnswerOption"
+    AnswerOption:
+      type: object
+      required:
+        - id
+        - questionId
+        - text
+        - value
+        - sortOrder
+      properties:
+        id:
+          type: string
+          example: q1_a1
+        questionId:
+          type: string
+          example: q1
+        text:
+          type: string
+          example: Спокойный и уверенный
+        value:
+          type: string
+          example: calm_confident
+        sortOrder:
+          type: integer
+          example: 1
+    RecommendationRequest:
+      type: object
+      required:
+        - answerOptionIds
+      properties:
+        answerOptionIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          example:
+            - q1_a1
+            - q2_a1
+            - q3_a1
+    RecommendationResponse:
+      type: object
+      required:
+        - profile
+        - items
+      properties:
+        profile:
+          $ref: "#/components/schemas/AromaProfile"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendationItem"
+    AromaProfile:
+      type: object
+      required:
+        - name
+        - description
+        - tags
+      properties:
+        name:
+          type: string
+          example: Спокойный минималист
+        description:
+          type: string
+          example: Вам подходят чистые, спокойные и ненавязчивые ароматы.
+        tags:
+          type: array
+          items:
+            type: string
+          example:
+            - спокойный
+            - чистый
+            - офисный
+    RecommendationItem:
+      type: object
+      required:
+        - id
+        - name
+        - brand
+        - gender
+        - imageUrl
+        - price
+        - stockStatus
+        - score
+        - reason
+      properties:
+        id:
+          type: string
+          example: fresh-office
+        name:
+          type: string
+          example: Fresh Office
+        brand:
+          type: string
+          example: AromaType
+        gender:
+          type: string
+          example: unisex
+        imageUrl:
+          type: string
+          example: ""
+        price:
+          type: string
+          example: "490.00"
+        stockStatus:
+          type: string
+          example: in_stock
+        score:
+          type: integer
+          example: 75
+        reason:
+          type: string
+          example: "Совпадает с вашим профилем по тегам: свежий, чистый, офисный."

@@ -8,21 +8,29 @@ import (
 
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/auth"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/config"
+	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/questionnaire"
 )
 
 const serviceVersion = "0.1.0"
 
 type Router struct {
-	cfg         config.Config
-	logger      *slog.Logger
-	authService *auth.Service
+	cfg                  config.Config
+	logger               *slog.Logger
+	authService          *auth.Service
+	questionnaireService *questionnaire.Service
 }
 
-func NewRouter(cfg config.Config, logger *slog.Logger, authService *auth.Service) http.Handler {
+func NewRouter(
+	cfg config.Config,
+	logger *slog.Logger,
+	authService *auth.Service,
+	questionnaireService *questionnaire.Service,
+) http.Handler {
 	router := &Router{
-		cfg:         cfg,
-		logger:      logger,
-		authService: authService,
+		cfg:                  cfg,
+		logger:               logger,
+		authService:          authService,
+		questionnaireService: questionnaireService,
 	}
 
 	mux := http.NewServeMux()
@@ -31,6 +39,8 @@ func NewRouter(cfg config.Config, logger *slog.Logger, authService *auth.Service
 	mux.HandleFunc("GET /openapi.yaml", router.handleOpenAPI)
 	mux.HandleFunc("POST /api/auth/register", router.handleRegister)
 	mux.HandleFunc("POST /api/auth/login", router.handleLogin)
+	mux.HandleFunc("GET /api/questions", router.handleQuestions)
+	mux.HandleFunc("POST /api/recommendations", router.handleRecommendations)
 
 	return logRequests(logger, mux)
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/config"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/database"
 	httpapi "github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/http"
+	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/questionnaire"
 )
 
 func main() {
@@ -43,10 +44,11 @@ func main() {
 	}
 
 	authService := auth.NewService(auth.NewRepository(dbPool), cfg.JWTSecret, cfg.JWTTTL)
+	questionnaireService := questionnaire.NewService(questionnaire.NewRepository(dbPool))
 
 	server := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           httpapi.NewRouter(cfg, logger, authService),
+		Handler:           httpapi.NewRouter(cfg, logger, authService, questionnaireService),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
