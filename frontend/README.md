@@ -1,23 +1,31 @@
 # Aroma Type MVP v0
 
-Минимальная техническая основа frontend-части проекта Aroma Type.
+The minimum technical basis of the frontend part of the Aroma Type project.
 
-## Что отображается
+## What is displayed
 
 - `Aroma Type`
-- `Опросник`
+- `Questionnaire`
 - `App loaded`
-- `Telegram SDK connected` или `Browser fallback mode`
+- `Telegram SDK connected` or `Browser fallback mode`
 - `Environment checking`
-- кнопка `Запустить smoke-check`
-- после нажатия: `Smoke-check passed`
+- button `Run smoke-check`
+- after clicking: `Smoke-check passed`
 
 ## Health-check
 
-После деплоя проверить `/health`.
+After deployment, check `/health`.
 
-Должно быть:
+ Should be:
 
 ```text
 OK
 ```
+
+## Links
+
+Deploy: https://aroma-type-mvp-v0.vercel.app
+
+Telegram Mini App: https://t.me/aroma_type_test_bot
+
+Health-check: https://aroma-type-mvp-v0.vercel.app/health
