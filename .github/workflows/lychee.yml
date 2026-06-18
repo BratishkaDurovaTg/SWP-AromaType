@@ -2,16 +2,10 @@ name: Lychee
 
 on:
   pull_request:
-    paths:
-      - "**/*.md"
-      - ".github/workflows/lychee.yml"
   push:
     branches:
       - main
       - dev
-    paths:
-      - "**/*.md"
-      - ".github/workflows/lychee.yml"
 
 jobs:
   link-check:
