@@ -1,0 +1,71 @@
+How to run MVP v1 locally
+
+This project is available as a runnable local artifact.
+
+Requirements
+
+Before running the project, make sure you have installed:
+
+* Docker
+* Docker Compose
+* Python 3
+
+1. Clone the repository
+
+git clone <repository-link>
+cd SWP-AromaType
+
+2. Start backend and database
+
+From the project root folder, run:
+
+docker compose up --build
+
+This command starts:
+
+* Go backend API on port 8080
+* PostgreSQL database on port 5432
+
+The backend automatically applies database migrations and creates the default admin user.
+
+Backend health check:
+
+http://localhost:8080/health
+
+Swagger / API documentation:
+
+http://localhost:8080/docs
+
+3. Start frontend
+
+Open a second terminal window and run:
+
+cd frontend
+python3 -m http.server 5173
+
+Then open the frontend in browser:
+
+http://localhost:5173/#quiz
+
+The local frontend uses the backend API at:
+
+http://localhost:8080
+
+4. Admin access
+
+Default local admin account:
+
+Email: admin@aromatype.local
+Password: local-admin-password
+
+MVP v1 access point
+
+The MVP v1 can be run locally using Docker Compose and the static frontend server.
+
+Local frontend:
+
+http://localhost:5173/#intro
+
+Local backend:
+
+http://localhost:8080
