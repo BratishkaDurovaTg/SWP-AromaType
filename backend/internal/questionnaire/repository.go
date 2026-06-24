@@ -2,6 +2,8 @@ package questionnaire
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -126,17 +128,19 @@ SELECT
 	f.id,
 	f.name,
 	f.brand,
-	f.gender,
 	f.image_url,
 	f.price::TEXT,
-	f.stock_status,
+	f.top_notes,
+	f.middle_notes,
+	f.base_notes,
+	f.main_accords,
 	ft.tag_id,
 	t.name AS tag_name,
 	ft.weight
 FROM fragrances f
 JOIN fragrance_tags ft ON ft.fragrance_id = f.id
 JOIN tags t ON t.id = ft.tag_id
-WHERE f.is_active = TRUE AND f.stock_status = 'in_stock'
+WHERE f.is_active = TRUE
 ORDER BY f.name
 `)
 	if err != nil {
@@ -147,14 +151,187 @@ ORDER BY f.name
 	return pgx.CollectRows(rows, pgx.RowToStructByName[FragranceTagRow])
 }
 
+func (r *Repository) GetFragranceByID(ctx context.Context, id string) (Fragrance, error) {
+	var fragrance Fragrance
+	var topNotes, middleNotes, baseNotes, mainAccords []byte
+	var volumeOptions []byte
+
+	err := r.db.QueryRow(ctx, `
+SELECT
+	id,
+	name,
+	brand,
+	image_url,
+	price::TEXT,
+	volume_options,
+	description,
+	top_notes,
+	middle_notes,
+	base_notes,
+	main_accords,
+	is_active
+FROM fragrances
+WHERE id = $1 AND is_active = TRUE
+`, id).Scan(
+		&fragrance.ID,
+		&fragrance.Name,
+		&fragrance.Brand,
+		&fragrance.ImageURL,
+		&fragrance.Price,
+		&volumeOptions,
+		&fragrance.Description,
+		&topNotes,
+		&middleNotes,
+		&baseNotes,
+		&mainAccords,
+		&fragrance.IsActive,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Fragrance{}, ErrFragranceNotFound
+	}
+	if err != nil {
+		return Fragrance{}, err
+	}
+
+	if err := decodeStringArray(topNotes, &fragrance.TopNotes); err != nil {
+		return Fragrance{}, err
+	}
+	if err := decodeStringArray(middleNotes, &fragrance.MiddleNotes); err != nil {
+		return Fragrance{}, err
+	}
+	if err := decodeStringArray(baseNotes, &fragrance.BaseNotes); err != nil {
+		return Fragrance{}, err
+	}
+	if err := decodeStringArray(mainAccords, &fragrance.MainAccords); err != nil {
+		return Fragrance{}, err
+	}
+	if err := decodeVolumeOptions(volumeOptions, &fragrance.VolumeOptions); err != nil {
+		return Fragrance{}, err
+	}
+
+	return fragrance, nil
+}
+
+func (r *Repository) CreateFragrance(ctx context.Context, fragrance Fragrance, tagIDs []string) (Fragrance, error) {
+	topNotes, err := encodeStringArray(fragrance.TopNotes)
+	if err != nil {
+		return Fragrance{}, err
+	}
+	middleNotes, err := encodeStringArray(fragrance.MiddleNotes)
+	if err != nil {
+		return Fragrance{}, err
+	}
+	baseNotes, err := encodeStringArray(fragrance.BaseNotes)
+	if err != nil {
+		return Fragrance{}, err
+	}
+	mainAccords, err := encodeStringArray(fragrance.MainAccords)
+	if err != nil {
+		return Fragrance{}, err
+	}
+	volumeOptions, err := encodeVolumeOptions(fragrance.VolumeOptions)
+	if err != nil {
+		return Fragrance{}, err
+	}
+
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return Fragrance{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	err = tx.QueryRow(ctx, `
+INSERT INTO fragrances (
+	id, name, brand, image_url, price, volume_options, description,
+	top_notes, middle_notes, base_notes, main_accords, is_active
+) VALUES (
+	$1, $2, $3, $4, $5, $6::JSONB, $7,
+	$8::JSONB, $9::JSONB, $10::JSONB, $11::JSONB, $12
+)
+RETURNING price::TEXT
+`,
+		fragrance.ID,
+		fragrance.Name,
+		fragrance.Brand,
+		fragrance.ImageURL,
+		fragrance.Price,
+		volumeOptions,
+		fragrance.Description,
+		topNotes,
+		middleNotes,
+		baseNotes,
+		mainAccords,
+		fragrance.IsActive,
+	).Scan(&fragrance.Price)
+	if err != nil {
+		return Fragrance{}, err
+	}
+
+	for _, tagID := range tagIDs {
+		if _, err := tx.Exec(ctx, `
+INSERT INTO fragrance_tags (fragrance_id, tag_id, weight)
+VALUES ($1, $2, 1)
+ON CONFLICT (fragrance_id, tag_id) DO UPDATE SET weight = EXCLUDED.weight
+`, fragrance.ID, tagID); err != nil {
+			return Fragrance{}, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return Fragrance{}, err
+	}
+
+	return fragrance, nil
+}
+
+func encodeStringArray(values []string) (string, error) {
+	if values == nil {
+		values = []string{}
+	}
+	bytes, err := json.Marshal(values)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func decodeStringArray(raw []byte, destination *[]string) error {
+	if len(raw) == 0 {
+		*destination = []string{}
+		return nil
+	}
+	return json.Unmarshal(raw, destination)
+}
+
+func encodeVolumeOptions(values []VolumeOption) (string, error) {
+	if values == nil {
+		values = []VolumeOption{}
+	}
+	bytes, err := json.Marshal(values)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func decodeVolumeOptions(raw []byte, destination *[]VolumeOption) error {
+	if len(raw) == 0 {
+		*destination = []VolumeOption{}
+		return nil
+	}
+	return json.Unmarshal(raw, destination)
+}
+
 type FragranceTagRow struct {
 	ID          string `db:"id"`
 	Name        string `db:"name"`
 	Brand       string `db:"brand"`
-	Gender      string `db:"gender"`
 	ImageURL    string `db:"image_url"`
 	Price       string `db:"price"`
-	StockStatus string `db:"stock_status"`
+	TopNotes    []byte `db:"top_notes"`
+	MiddleNotes []byte `db:"middle_notes"`
+	BaseNotes   []byte `db:"base_notes"`
+	MainAccords []byte `db:"main_accords"`
 	TagID       string `db:"tag_id"`
 	TagName     string `db:"tag_name"`
 	Weight      int    `db:"weight"`

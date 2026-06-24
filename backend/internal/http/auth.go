@@ -11,7 +11,6 @@ import (
 type registerRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Role     string `json:"role"`
 }
 
 type loginRequest struct {
@@ -37,11 +36,11 @@ func (r *Router) handleRegister(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	result, err := r.authService.Register(req.Context(), payload.Email, payload.Password, payload.Role)
+	result, err := r.authService.Register(req.Context(), payload.Email, payload.Password)
 	if err != nil {
 		switch {
 		case errors.Is(err, auth.ErrInvalidInput):
-			writeError(w, http.StatusBadRequest, "invalid_input", "Email, password with at least 6 characters, and valid role are required.")
+			writeError(w, http.StatusBadRequest, "invalid_input", "Email and password with at least 6 characters are required.")
 		case errors.Is(err, auth.ErrEmailAlreadyExists):
 			writeError(w, http.StatusConflict, "email_already_exists", "User with this email already exists.")
 		default:

@@ -41,6 +41,30 @@ RETURNING id, email, password_hash, role, created_at, updated_at
 	return user, nil
 }
 
+func (r *Repository) UpsertAdmin(ctx context.Context, user User) (User, error) {
+	err := r.db.QueryRow(ctx, `
+INSERT INTO users (id, email, password_hash, role)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (email) DO UPDATE SET
+	password_hash = EXCLUDED.password_hash,
+	role = EXCLUDED.role,
+	updated_at = now()
+RETURNING id, email, password_hash, role, created_at, updated_at
+`, user.ID, user.Email, user.PasswordHash, user.Role).Scan(
+		&user.ID,
+		&user.Email,
+		&user.PasswordHash,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+}
+
 func (r *Repository) FindUserByEmail(ctx context.Context, email string) (User, error) {
 	var user User
 	err := r.db.QueryRow(ctx, `

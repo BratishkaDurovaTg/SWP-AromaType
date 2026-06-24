@@ -44,6 +44,11 @@ func main() {
 	}
 
 	authService := auth.NewService(auth.NewRepository(dbPool), cfg.JWTSecret, cfg.JWTTTL)
+	if _, err := authService.EnsureAdmin(startupCtx, cfg.AdminEmail, cfg.AdminPassword); err != nil {
+		logger.Error("failed to ensure admin user", "error", err)
+		os.Exit(1)
+	}
+
 	questionnaireService := questionnaire.NewService(questionnaire.NewRepository(dbPool))
 
 	server := &http.Server{

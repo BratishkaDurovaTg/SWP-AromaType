@@ -38,7 +38,6 @@ paths:
             example:
               email: user@example.com
               password: password123
-              role: user
       responses:
         "201":
           description: User registered and JWT issued.
@@ -142,7 +141,122 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/fragrances/{id}:
+    get:
+      summary: Get fragrance product card
+      operationId: getFragrance
+      tags:
+        - Fragrances
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: fresh-office
+      responses:
+        "200":
+          description: Fragrance product card with notes and usage metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fragrance"
+        "404":
+          description: Fragrance not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/admin/fragrances:
+    post:
+      summary: Create fragrance as admin
+      operationId: createFragrance
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFragranceRequest"
+      responses:
+        "201":
+          description: Fragrance created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fragrance"
+        "400":
+          description: Invalid fragrance data.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid JWT.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin role is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/admin/uploads/fragrance-photo:
+    post:
+      summary: Upload fragrance photo as admin
+      operationId: uploadFragrancePhoto
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - photo
+              properties:
+                photo:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Photo uploaded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+        "400":
+          description: Invalid upload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid JWT.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Admin role is required.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthResponse:
       type: object
@@ -174,13 +288,6 @@ components:
           type: string
           minLength: 6
           example: password123
-        role:
-          type: string
-          enum:
-            - user
-            - admin
-          default: user
-          example: user
     LoginRequest:
       type: object
       required:
@@ -306,6 +413,7 @@ components:
       required:
         - profile
         - items
+        - totalItems
       properties:
         profile:
           $ref: "#/components/schemas/AromaProfile"
@@ -313,12 +421,18 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RecommendationItem"
+        totalItems:
+          type: integer
+          example: 4
     AromaProfile:
       type: object
       required:
         - name
         - description
         - tags
+        - profileBars
+        - characterTraits
+        - keyNotes
       properties:
         name:
           type: string
@@ -334,16 +448,43 @@ components:
             - спокойный
             - чистый
             - офисный
+        profileBars:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreMetric"
+        characterTraits:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScoreMetric"
+        keyNotes:
+          type: array
+          items:
+            type: string
+    ScoreMetric:
+      type: object
+      required:
+        - label
+        - percent
+      properties:
+        label:
+          type: string
+          example: Свежесть
+        percent:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 88
     RecommendationItem:
       type: object
       required:
         - id
         - name
         - brand
-        - gender
         - imageUrl
         - price
-        - stockStatus
+        - mainAccords
+        - keyNotes
+        - matchPercent
         - score
         - reason
       properties:
@@ -356,21 +497,173 @@ components:
         brand:
           type: string
           example: AromaType
-        gender:
-          type: string
-          example: unisex
         imageUrl:
           type: string
           example: ""
         price:
           type: string
           example: "490.00"
-        stockStatus:
-          type: string
-          example: in_stock
+        mainAccords:
+          type: array
+          items:
+            type: string
+        keyNotes:
+          type: array
+          items:
+            type: string
+        matchPercent:
+          type: integer
+          example: 96
         score:
           type: integer
           example: 75
         reason:
           type: string
           example: "Совпадает с вашим профилем по тегам: свежий, чистый, офисный."
+    Fragrance:
+      type: object
+      required:
+        - id
+        - name
+        - brand
+        - imageUrl
+        - price
+        - volumeOptions
+        - description
+        - topNotes
+        - middleNotes
+        - baseNotes
+        - mainAccords
+        - isActive
+      properties:
+        id:
+          type: string
+          example: fresh-office
+        name:
+          type: string
+          example: Fresh Office
+        brand:
+          type: string
+          example: AromaType
+        imageUrl:
+          type: string
+          example: ""
+        price:
+          type: string
+          example: "490.00"
+        volumeOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/VolumeOption"
+        description:
+          type: string
+          example: Чистый и свежий аромат для учебы, офиса и спокойного повседневного образа.
+        topNotes:
+          type: array
+          items:
+            type: string
+          example:
+            - бергамот
+            - лимон
+        middleNotes:
+          type: array
+          items:
+            type: string
+          example:
+            - лаванда
+        baseNotes:
+          type: array
+          items:
+            type: string
+          example:
+            - мускус
+        mainAccords:
+          type: array
+          items:
+            type: string
+          example:
+            - свежий
+            - чистый
+        isActive:
+          type: boolean
+          example: true
+    CreateFragranceRequest:
+      type: object
+      required:
+        - name
+        - brand
+      properties:
+        name:
+          type: string
+          example: Citrus Day
+        brand:
+          type: string
+          example: AromaType
+        imageUrl:
+          type: string
+          example: https://example.com/citrus-day.jpg
+        price:
+          type: number
+          example: 490
+        volumeOptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/VolumeOption"
+        description:
+          type: string
+          example: Легкий цитрусовый аромат на каждый день.
+        topNotes:
+          type: array
+          items:
+            type: string
+          example:
+            - лимон
+            - бергамот
+        middleNotes:
+          type: array
+          items:
+            type: string
+          example:
+            - чай
+        baseNotes:
+          type: array
+          items:
+            type: string
+          example:
+            - мускус
+        mainAccords:
+          type: array
+          items:
+            type: string
+          example:
+            - свежий
+        tagIds:
+          type: array
+          items:
+            type: string
+          example:
+            - fresh
+            - daily
+        isActive:
+          type: boolean
+          default: true
+    VolumeOption:
+      type: object
+      required:
+        - volumeMl
+        - price
+      properties:
+        volumeMl:
+          type: integer
+          example: 50
+        price:
+          type: number
+          example: 490
+    UploadResponse:
+      type: object
+      required:
+        - imageUrl
+      properties:
+        imageUrl:
+          type: string
+          example: /uploads/0f4c1023-1d1d-4f67-a4d9-6d17ef6ff903.jpg

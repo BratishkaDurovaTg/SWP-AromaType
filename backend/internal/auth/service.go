@@ -15,6 +15,7 @@ var (
 	ErrInvalidInput       = errors.New("invalid input")
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidToken       = errors.New("invalid token")
 )
 
 const (
@@ -50,11 +51,10 @@ func NewService(repo *Repository, jwtSecret string, jwtTTL time.Duration) *Servi
 	}
 }
 
-func (s *Service) Register(ctx context.Context, email, password, role string) (AuthResult, error) {
+func (s *Service) Register(ctx context.Context, email, password string) (AuthResult, error) {
 	email = normalizeEmail(email)
-	role = normalizeRole(role)
 
-	if email == "" || len(password) < 6 || !isAllowedRole(role) {
+	if email == "" || len(password) < 6 {
 		return AuthResult{}, ErrInvalidInput
 	}
 
@@ -67,7 +67,7 @@ func (s *Service) Register(ctx context.Context, email, password, role string) (A
 		ID:           uuid.NewString(),
 		Email:        email,
 		PasswordHash: string(passwordHash),
-		Role:         role,
+		Role:         RoleUser,
 	}
 
 	created, err := s.repo.CreateUser(ctx, user)
@@ -84,6 +84,28 @@ func (s *Service) Register(ctx context.Context, email, password, role string) (A
 	}
 
 	return AuthResult{AccessToken: token, User: created}, nil
+}
+
+func (s *Service) EnsureAdmin(ctx context.Context, email, password string) (User, error) {
+	email = normalizeEmail(email)
+	if email == "" && password == "" {
+		return User{}, nil
+	}
+	if email == "" || len(password) < 12 {
+		return User{}, ErrInvalidInput
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return User{}, err
+	}
+
+	return s.repo.UpsertAdmin(ctx, User{
+		ID:           uuid.NewString(),
+		Email:        email,
+		PasswordHash: string(passwordHash),
+		Role:         RoleAdmin,
+	})
 }
 
 func (s *Service) Login(ctx context.Context, email, password string) (AuthResult, error) {
@@ -109,6 +131,29 @@ func (s *Service) Login(ctx context.Context, email, password string) (AuthResult
 	return AuthResult{AccessToken: token, User: user}, nil
 }
 
+func (s *Service) VerifyToken(tokenString string) (Claims, error) {
+	tokenString = strings.TrimSpace(tokenString)
+	if tokenString == "" {
+		return Claims{}, ErrInvalidToken
+	}
+
+	claims := Claims{}
+	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (any, error) {
+		if token.Method != jwt.SigningMethodHS256 {
+			return nil, ErrInvalidToken
+		}
+		return s.jwtSecret, nil
+	})
+	if err != nil || !token.Valid {
+		return Claims{}, ErrInvalidToken
+	}
+	if claims.UserID == "" || claims.Email == "" || !isAllowedRole(claims.Role) {
+		return Claims{}, ErrInvalidToken
+	}
+
+	return claims, nil
+}
+
 func (s *Service) issueToken(user User) (string, error) {
 	now := time.Now().UTC()
 	claims := Claims{
@@ -128,14 +173,6 @@ func (s *Service) issueToken(user User) (string, error) {
 
 func normalizeEmail(email string) string {
 	return strings.ToLower(strings.TrimSpace(email))
-}
-
-func normalizeRole(role string) string {
-	role = strings.ToLower(strings.TrimSpace(role))
-	if role == "" {
-		return RoleUser
-	}
-	return role
 }
 
 func isAllowedRole(role string) bool {

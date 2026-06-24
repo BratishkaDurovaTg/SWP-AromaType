@@ -4,10 +4,17 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
-var ErrNoAnswers = errors.New("at least one answer option is required")
+var (
+	ErrNoAnswers         = errors.New("at least one answer option is required")
+	ErrFragranceNotFound = errors.New("fragrance not found")
+	ErrInvalidFragrance  = errors.New("invalid fragrance")
+)
 
 type Service struct {
 	repo *Repository
@@ -58,10 +65,10 @@ func (s *Service) Recommend(ctx context.Context, answerOptionIDs []string) (Reco
 					ID:          row.ID,
 					Name:        row.Name,
 					Brand:       row.Brand,
-					Gender:      row.Gender,
 					ImageURL:    row.ImageURL,
 					Price:       row.Price,
-					StockStatus: row.StockStatus,
+					MainAccords: decodeStrings(row.MainAccords),
+					KeyNotes:    firstStrings(append(append(decodeStrings(row.TopNotes), decodeStrings(row.MiddleNotes)...), decodeStrings(row.BaseNotes)...), 3),
 				},
 				matchedTags: make(map[string]int),
 			}
@@ -83,6 +90,16 @@ func (s *Service) Recommend(ctx context.Context, answerOptionIDs []string) (Reco
 		items = append(items, fragrance.RecommendationItem)
 	}
 
+	topScore := 0
+	for _, item := range items {
+		if item.Score > topScore {
+			topScore = item.Score
+		}
+	}
+	for index := range items {
+		items[index].MatchPercent = scorePercent(items[index].Score, topScore)
+	}
+
 	sort.Slice(items, func(i, j int) bool {
 		if items[i].Score == items[j].Score {
 			return items[i].Name < items[j].Name
@@ -95,9 +112,54 @@ func (s *Service) Recommend(ctx context.Context, answerOptionIDs []string) (Reco
 	}
 
 	return RecommendationResponse{
-		Profile: buildProfile(userTagWeights, tagNames),
-		Items:   items,
+		Profile:    buildProfile(userTagWeights, tagNames),
+		Items:      items,
+		TotalItems: len(items),
 	}, nil
+}
+
+func (s *Service) GetFragrance(ctx context.Context, id string) (Fragrance, error) {
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return Fragrance{}, ErrFragranceNotFound
+	}
+	return s.repo.GetFragranceByID(ctx, id)
+}
+
+func (s *Service) CreateFragrance(ctx context.Context, payload CreateFragranceRequest) (Fragrance, error) {
+	payload.Name = strings.TrimSpace(payload.Name)
+	payload.Brand = strings.TrimSpace(payload.Brand)
+	payload.ImageURL = strings.TrimSpace(payload.ImageURL)
+	payload.Description = strings.TrimSpace(payload.Description)
+	payload.VolumeOptions = cleanVolumeOptions(payload.VolumeOptions)
+
+	if payload.Name == "" ||
+		payload.Brand == "" ||
+		payload.Price < 0 {
+		return Fragrance{}, ErrInvalidFragrance
+	}
+
+	isActive := true
+	if payload.IsActive != nil {
+		isActive = *payload.IsActive
+	}
+
+	fragrance := Fragrance{
+		ID:            uuid.NewString(),
+		Name:          payload.Name,
+		Brand:         payload.Brand,
+		ImageURL:      payload.ImageURL,
+		Price:         strconv.FormatFloat(payload.Price, 'f', -1, 64),
+		VolumeOptions: payload.VolumeOptions,
+		Description:   payload.Description,
+		TopNotes:      cleanStrings(payload.TopNotes),
+		MiddleNotes:   cleanStrings(payload.MiddleNotes),
+		BaseNotes:     cleanStrings(payload.BaseNotes),
+		MainAccords:   cleanStrings(payload.MainAccords),
+		IsActive:      isActive,
+	}
+
+	return s.repo.CreateFragrance(ctx, fragrance, uniqueNonEmpty(payload.TagIDs))
 }
 
 type fragranceScore struct {
@@ -169,7 +231,23 @@ func buildProfile(tagWeights map[string]int, tagNames map[string]string) Profile
 		names = names[:5]
 	}
 
-	return Profile{Name: profileName, Description: description, Tags: names}
+	return Profile{
+		Name:        profileName,
+		Description: description,
+		Tags:        names,
+		ProfileBars: []ScoreMetric{
+			{Label: "Цветочный", Percent: clampPercent(tagWeights["romantic"]*18 + tagWeights["soft"]*12)},
+			{Label: "Зелёный", Percent: clampPercent(tagWeights["fresh"]*16 + tagWeights["clean"]*14)},
+			{Label: "Древесный", Percent: clampPercent(tagWeights["deep"]*16 + tagWeights["reliable"]*12)},
+			{Label: "Мускус", Percent: clampPercent(tagWeights["light"]*14 + tagWeights["daily"]*12)},
+		},
+		CharacterTraits: []ScoreMetric{
+			{Label: "Свежесть", Percent: clampPercent(tagWeights["fresh"]*18 + tagWeights["clean"]*16 + tagWeights["morning"]*10)},
+			{Label: "Универсальность", Percent: clampPercent(tagWeights["daily"]*18 + tagWeights["reliable"]*15 + tagWeights["office"]*12)},
+			{Label: "Лёгкий шлейф", Percent: clampPercent(tagWeights["light"]*18 + tagWeights["calm"]*12)},
+		},
+		KeyNotes: firstStrings(names, 5),
+	}
 }
 
 func buildReason(matchedTags map[string]int) string {
@@ -187,10 +265,6 @@ func buildReason(matchedTags map[string]int) string {
 	}
 
 	return "Совпадает с вашим профилем по тегам: " + strings.Join(tags, ", ") + "."
-}
-
-func hasTag(tagWeights map[string]int, tagID string) bool {
-	return tagWeights[tagID] > 0
 }
 
 func uniqueNonEmpty(values []string) []string {
@@ -216,4 +290,61 @@ func mapKeys(values map[string]int) []string {
 		keys = append(keys, key)
 	}
 	return keys
+}
+
+func cleanStrings(values []string) []string {
+	return uniqueNonEmpty(values)
+}
+
+func cleanVolumeOptions(values []VolumeOption) []VolumeOption {
+	result := make([]VolumeOption, 0, len(values))
+	seen := make(map[int]struct{})
+	for _, value := range values {
+		if value.VolumeML <= 0 || value.Price < 0 {
+			continue
+		}
+		if _, ok := seen[value.VolumeML]; ok {
+			continue
+		}
+		seen[value.VolumeML] = struct{}{}
+		result = append(result, value)
+	}
+	return result
+}
+
+func decodeStrings(raw []byte) []string {
+	var values []string
+	if err := decodeStringArray(raw, &values); err != nil {
+		return []string{}
+	}
+	return values
+}
+
+func firstStrings(values []string, limit int) []string {
+	values = cleanStrings(values)
+	if len(values) > limit {
+		return values[:limit]
+	}
+	return values
+}
+
+func scorePercent(score, topScore int) int {
+	if score <= 0 || topScore <= 0 {
+		return 0
+	}
+	percent := 70 + (score * 30 / topScore)
+	if percent > 99 {
+		return 99
+	}
+	return percent
+}
+
+func clampPercent(value int) int {
+	if value < 12 {
+		return 12
+	}
+	if value > 96 {
+		return 96
+	}
+	return value
 }

@@ -21,6 +21,14 @@ func Connect(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 
 func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	_, err := pool.Exec(ctx, `
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS recommendation_items;
+DROP TABLE IF EXISTS recommendations;
+DROP TABLE IF EXISTS aroma_profiles;
+DROP TABLE IF EXISTS questionnaire_answers;
+DROP TABLE IF EXISTS questionnaire_sessions;
+
 CREATE TABLE IF NOT EXISTS users (
 	id TEXT PRIMARY KEY,
 	email TEXT NOT NULL UNIQUE,
@@ -34,29 +42,32 @@ CREATE TABLE IF NOT EXISTS fragrances (
 	id TEXT PRIMARY KEY,
 	name TEXT NOT NULL,
 	brand TEXT NOT NULL,
-	gender TEXT NOT NULL CHECK (gender IN ('male', 'female', 'unisex')),
 	image_url TEXT NOT NULL DEFAULT '',
-	volume NUMERIC(8, 2) NOT NULL DEFAULT 0,
 	price NUMERIC(10, 2) NOT NULL DEFAULT 0,
-	stock_status TEXT NOT NULL CHECK (stock_status IN ('in_stock', 'out_of_stock')),
+	volume_options JSONB NOT NULL DEFAULT '[]'::JSONB,
 	description TEXT NOT NULL DEFAULT '',
 	top_notes JSONB NOT NULL DEFAULT '[]'::JSONB,
 	middle_notes JSONB NOT NULL DEFAULT '[]'::JSONB,
 	base_notes JSONB NOT NULL DEFAULT '[]'::JSONB,
 	main_accords JSONB NOT NULL DEFAULT '[]'::JSONB,
-	longevity INTEGER NOT NULL DEFAULT 3 CHECK (longevity BETWEEN 1 AND 5),
-	projection INTEGER NOT NULL DEFAULT 3 CHECK (projection BETWEEN 1 AND 5),
-	visibility INTEGER NOT NULL DEFAULT 3 CHECK (visibility BETWEEN 1 AND 5),
-	versatility INTEGER NOT NULL DEFAULT 3 CHECK (versatility BETWEEN 1 AND 5),
-	seasons JSONB NOT NULL DEFAULT '[]'::JSONB,
-	time_of_day JSONB NOT NULL DEFAULT '[]'::JSONB,
-	situations JSONB NOT NULL DEFAULT '[]'::JSONB,
-	matching_profiles JSONB NOT NULL DEFAULT '[]'::JSONB,
-	why_recommended TEXT NOT NULL DEFAULT '',
 	is_active BOOLEAN NOT NULL DEFAULT TRUE,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE fragrances ADD COLUMN IF NOT EXISTS volume_options JSONB NOT NULL DEFAULT '[]'::JSONB;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS gender;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS volume;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS stock_status;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS longevity;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS projection;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS visibility;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS versatility;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS seasons;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS time_of_day;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS situations;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS matching_profiles;
+ALTER TABLE fragrances DROP COLUMN IF EXISTS why_recommended;
 
 CREATE TABLE IF NOT EXISTS tags (
 	id TEXT PRIMARY KEY,
@@ -93,58 +104,6 @@ CREATE TABLE IF NOT EXISTS answer_option_tags (
 	tag_id TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
 	weight INTEGER NOT NULL DEFAULT 1,
 	PRIMARY KEY (answer_option_id, tag_id)
-);
-
-CREATE TABLE IF NOT EXISTS questionnaire_sessions (
-	id TEXT PRIMARY KEY,
-	user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
-	status TEXT NOT NULL CHECK (status IN ('started', 'completed')),
-	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-	completed_at TIMESTAMPTZ
-);
-
-CREATE TABLE IF NOT EXISTS questionnaire_answers (
-	id TEXT PRIMARY KEY,
-	session_id TEXT NOT NULL REFERENCES questionnaire_sessions(id) ON DELETE CASCADE,
-	question_id TEXT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
-	answer_option_id TEXT NOT NULL REFERENCES answer_options(id) ON DELETE CASCADE,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS aroma_profiles (
-	id TEXT PRIMARY KEY,
-	session_id TEXT NOT NULL REFERENCES questionnaire_sessions(id) ON DELETE CASCADE,
-	name TEXT NOT NULL,
-	description TEXT NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS recommendations (
-	id TEXT PRIMARY KEY,
-	session_id TEXT NOT NULL REFERENCES questionnaire_sessions(id) ON DELETE CASCADE,
-	algorithm_version TEXT NOT NULL,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS recommendation_items (
-	id TEXT PRIMARY KEY,
-	recommendation_id TEXT NOT NULL REFERENCES recommendations(id) ON DELETE CASCADE,
-	fragrance_id TEXT NOT NULL REFERENCES fragrances(id) ON DELETE CASCADE,
-	score INTEGER NOT NULL,
-	reason TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS orders (
-	id TEXT PRIMARY KEY,
-	user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
-	fragrance_id TEXT NOT NULL REFERENCES fragrances(id) ON DELETE RESTRICT,
-	status TEXT NOT NULL DEFAULT 'new',
-	contact_name TEXT NOT NULL DEFAULT '',
-	contact_phone TEXT NOT NULL DEFAULT '',
-	contact_telegram TEXT NOT NULL DEFAULT '',
-	comment TEXT NOT NULL DEFAULT '',
-	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 `)
 	if err != nil {
@@ -244,57 +203,35 @@ INSERT INTO answer_option_tags (answer_option_id, tag_id, weight) VALUES
 ON CONFLICT (answer_option_id, tag_id) DO UPDATE SET weight = EXCLUDED.weight;
 
 INSERT INTO fragrances (
-	id, name, brand, gender, image_url, volume, price, stock_status, description,
-	top_notes, middle_notes, base_notes, main_accords, longevity, projection, visibility, versatility,
-	seasons, time_of_day, situations, matching_profiles, why_recommended, is_active
+	id, name, brand, image_url, price, volume_options, description,
+	top_notes, middle_notes, base_notes, main_accords, is_active
 ) VALUES
-	('fresh-office', 'Fresh Office', 'AromaType', 'unisex', '', 2, 490, 'in_stock',
+	('fresh-office', 'Fresh Office', 'AromaType', '', 490, '[{"volumeMl":50,"price":490},{"volumeMl":100,"price":890}]',
 	 'Чистый и свежий аромат для учебы, офиса и спокойного повседневного образа.',
-	 '["бергамот", "лимон"]', '["лаванда"]', '["мускус"]', '["свежий", "чистый"]', 3, 2, 2, 5,
-	 '["весна", "лето"]', '["утро", "день"]', '["офис", "учеба", "повседневность"]',
-	 '["Спокойный минималист"]', 'Подходит для спокойного и чистого образа без лишней громкости.', TRUE),
-	('warm-date', 'Warm Date', 'AromaType', 'unisex', '', 2, 540, 'in_stock',
+	 '["бергамот", "лимон"]', '["лаванда"]', '["мускус"]', '["свежий", "чистый"]', TRUE),
+	('warm-date', 'Warm Date', 'AromaType', '', 540, '[{"volumeMl":50,"price":540},{"volumeMl":100,"price":980}]',
 	 'Мягкий теплый аромат для встреч, свиданий и уютного вечернего настроения.',
-	 '["кардамон"]', '["жасмин"]', '["ваниль", "мускус"]', '["тёплый", "уютный"]', 4, 3, 3, 4,
-	 '["осень", "зима"]', '["вечер"]', '["свидание", "встреча"]',
-	 '["Мягкая романтика"]', 'Подходит для теплого, мягкого и притягательного впечатления.', TRUE),
-	('bright-party', 'Bright Party', 'AromaType', 'unisex', '', 2, 590, 'in_stock',
+	 '["кардамон"]', '["жасмин"]', '["ваниль", "мускус"]', '["тёплый", "уютный"]', TRUE),
+	('bright-party', 'Bright Party', 'AromaType', '', 590, '[{"volumeMl":50,"price":590},{"volumeMl":100,"price":1090}]',
 	 'Яркий энергичный аромат для вечеринок, фестивалей и заметного образа.',
-	 '["грейпфрут"]', '["имбирь"]', '["амброксан"]', '["яркий", "энергичный"]', 4, 4, 4, 3,
-	 '["весна", "лето"]', '["день", "вечер"]', '["вечеринка", "фестиваль"]',
-	 '["Яркая энергия"]', 'Подходит для выразительного и динамичного образа.', TRUE),
-	('mystic-night', 'Mystic Night', 'AromaType', 'unisex', '', 2, 650, 'in_stock',
+	 '["грейпфрут"]', '["имбирь"]', '["амброксан"]', '["яркий", "энергичный"]', TRUE),
+	('mystic-night', 'Mystic Night', 'AromaType', '', 650, '[{"volumeMl":50,"price":650},{"volumeMl":100,"price":1190}]',
 	 'Глубокий и загадочный аромат для ночного настроения и смелого впечатления.',
-	 '["черный перец"]', '["ладан"]', '["ветивер", "амброксан"]', '["глубокий", "загадочный"]', 5, 4, 5, 2,
-	 '["осень", "зима"]', '["ночь"]', '["вечер", "особый случай"]',
-	 '["Таинственный акцент"]', 'Подходит для глубокого, интригующего и необычного образа.', TRUE),
-	('daily-soft', 'Daily Soft', 'AromaType', 'unisex', '', 2, 450, 'in_stock',
+	 '["черный перец"]', '["ладан"]', '["ветивер", "амброксан"]', '["глубокий", "загадочный"]', TRUE),
+	('daily-soft', 'Daily Soft', 'AromaType', '', 450, '[{"volumeMl":50,"price":450},{"volumeMl":100,"price":790}]',
 	 'Надежный мягкий аромат на каждый день, когда хочется комфорта и универсальности.',
-	 '["мандарин"]', '["пудровые ноты"]', '["белый мускус"]', '["мягкий", "повседневный"]', 3, 2, 2, 5,
-	 '["весна", "осень"]', '["день"]', '["повседневность", "учеба", "прогулка"]',
-	 '["Сбалансированный профиль"]', 'Подходит для узнаваемого, надежного и комфортного повседневного выбора.', TRUE)
+	 '["мандарин"]', '["пудровые ноты"]', '["белый мускус"]', '["мягкий", "повседневный"]', TRUE)
 ON CONFLICT (id) DO UPDATE SET
 	name = EXCLUDED.name,
 	brand = EXCLUDED.brand,
-	gender = EXCLUDED.gender,
 	image_url = EXCLUDED.image_url,
-	volume = EXCLUDED.volume,
 	price = EXCLUDED.price,
-	stock_status = EXCLUDED.stock_status,
+	volume_options = EXCLUDED.volume_options,
 	description = EXCLUDED.description,
 	top_notes = EXCLUDED.top_notes,
 	middle_notes = EXCLUDED.middle_notes,
 	base_notes = EXCLUDED.base_notes,
 	main_accords = EXCLUDED.main_accords,
-	longevity = EXCLUDED.longevity,
-	projection = EXCLUDED.projection,
-	visibility = EXCLUDED.visibility,
-	versatility = EXCLUDED.versatility,
-	seasons = EXCLUDED.seasons,
-	time_of_day = EXCLUDED.time_of_day,
-	situations = EXCLUDED.situations,
-	matching_profiles = EXCLUDED.matching_profiles,
-	why_recommended = EXCLUDED.why_recommended,
 	is_active = EXCLUDED.is_active,
 	updated_at = now();
 

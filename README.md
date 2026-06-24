@@ -13,6 +13,48 @@ docs/      API contract, database schema notes, product docs
 
 ## Local Development
 
+### Full MVP v1 frontend + backend
+
+Requirements:
+
+- Docker Desktop
+- Python 3
+
+Run the backend and PostgreSQL from the repository root:
+
+```bash
+docker compose up --build
+```
+
+In a second terminal, run the frontend:
+
+```bash
+cd frontend
+python3 -m http.server 5173
+```
+
+Open the app:
+
+```text
+http://localhost:5173
+```
+
+Useful local links:
+
+- Frontend: `http://localhost:5173`
+- Backend health: `http://localhost:8080/health`
+- Swagger UI: `http://localhost:8080/docs`
+- OpenAPI spec: `http://localhost:8080/openapi.yaml`
+
+Admin account for local Docker development:
+
+```text
+admin@aromatype.local
+local-admin-password
+```
+
+### Backend only
+
 Start the backend stub:
 
 ```bash
@@ -41,6 +83,21 @@ database: aromatype
 user: aromatype
 password: aromatype
 ```
+
+Local Docker Compose also creates or updates an admin user from environment
+variables:
+
+```text
+ADMIN_EMAIL=admin@aromatype.local
+ADMIN_PASSWORD=local-admin-password
+```
+
+Public registration always creates a regular `user`. Admin access is not issued
+through `/api/auth/register`.
+
+Fragrance photos are uploaded through `POST /api/admin/uploads/fragrance-photo`
+as multipart field `photo`. The response `imageUrl` is then used in
+`POST /api/admin/fragrances`.
 
 ## Team Workflow
 

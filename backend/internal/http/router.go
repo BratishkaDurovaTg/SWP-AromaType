@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/auth"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/config"
@@ -41,8 +42,16 @@ func NewRouter(
 	mux.HandleFunc("POST /api/auth/login", router.handleLogin)
 	mux.HandleFunc("GET /api/questions", router.handleQuestions)
 	mux.HandleFunc("POST /api/recommendations", router.handleRecommendations)
+	mux.HandleFunc("GET /api/fragrances/{id}", router.handleFragrance)
+	mux.HandleFunc("POST /api/admin/uploads/fragrance-photo", router.handleUploadFragrancePhoto)
+	mux.HandleFunc("POST /api/admin/fragrances", router.handleCreateFragrance)
+	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadDir))))
 
-	return logRequests(logger, mux)
+	if err := os.MkdirAll(cfg.UploadDir, 0o755); err != nil {
+		logger.Error("failed to create upload directory", "path", cfg.UploadDir, "error", err)
+	}
+
+	return logRequests(logger, withCORS(cfg.CORSOrigins, mux))
 }
 
 func (r *Router) handleHealth(w http.ResponseWriter, _ *http.Request) {
