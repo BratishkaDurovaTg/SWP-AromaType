@@ -65,7 +65,7 @@ The backend currently includes:
 
 Swagger UI was demonstrated during development using a temporary Cloudflare tunnel deployment.
 
-[https://outlet-lonely-jacksonville-surfing.trycloudflare.com/docs]
+For local verification, Swagger UI is available at `http://localhost:8080/docs` after starting Docker Compose.
 
 ---
 
