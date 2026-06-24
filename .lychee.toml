@@ -1,6 +1,0 @@
-# Historical delivery links that are intentionally not part of the live product.
-# GitHub Project views require a signed-in user and cannot be validated by CI.
-exclude = [
-  '^https://anonfilesnew\\.com/',
-  '^https://github\\.com/users/BratishkaDurovaTg/projects/1/views/',
-]

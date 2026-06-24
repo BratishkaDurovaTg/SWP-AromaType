@@ -79,11 +79,11 @@ Additional customer feedback regarding questionnaire methodology, research-based
 
 ## Product Backlog
 
-[Product Backlog View](https://github.com/users/BratishkaDurovaTg/projects/1/views/1?visibleFields=%5B%22Title%22%2C360819029%2C360819165%2C360819379%2C360819437%2C360819456%2C%22Milestone%22%2C%22Assignees%22%5D)
+The Product Backlog is maintained in the team's GitHub Project and is available to repository collaborators.
 
 ## Sprint Backlog
 
-[Sprint Backlog View](https://github.com/users/BratishkaDurovaTg/projects/1/views/2)
+The Sprint Backlog is maintained in the same team GitHub Project and is available to repository collaborators.
 
 ## Current Sprint Milestone
 
@@ -312,7 +312,7 @@ The application can be run locally using the setup instructions provided in the 
 
 # Video Demonstration
 
-[Video](https://anonfilesnew.com/s/d-toQrEthnh)
+The demonstration video is kept in the course delivery archive.
 
 ---
 
