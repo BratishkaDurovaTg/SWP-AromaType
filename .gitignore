@@ -7,6 +7,9 @@
 # Logs
 *.log
 
+# Runtime uploads
+uploads/
+
 # Go
 bin/
 coverage.out

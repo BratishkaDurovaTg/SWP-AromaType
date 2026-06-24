@@ -1,31 +1,45 @@
-# Aroma Type MVP v0
+# Aroma Type Frontend
 
-The minimum technical basis of the frontend part of the Aroma Type project.
+Static Telegram Mini App frontend for Aroma Type MVP v1.
 
-## What is displayed
+## Run Locally
 
-- `Aroma Type`
-- `Questionnaire`
-- `App loaded`
-- `Telegram SDK connected` or `Browser fallback mode`
-- `Environment checking`
-- button `Run smoke-check`
-- after clicking: `Smoke-check passed`
+Start the backend first:
 
-## Health-check
-
-After deployment, check `/health`.
-
- Should be:
-
-```text
-OK
+```bash
+docker compose up --build
 ```
 
-## Links
+Start the frontend from this directory:
 
-Deploy: https://aroma-type-mvp-v0.vercel.app
+```bash
+python3 -m http.server 5173
+```
 
-Telegram Mini App: https://t.me/aroma_type_test_bot
+Open:
 
-Health-check: https://aroma-type-mvp-v0.vercel.app/health
+```text
+http://localhost:5173
+```
+
+The local frontend uses `http://localhost:8080` as API base by default.
+In a deployed environment it uses the current origin unless another API URL is saved from the `API` button on the auth screen.
+
+## MVP v1 Screens
+
+- JWT login and registration.
+- Onboarding screen.
+- Guided questionnaire loaded from `GET /api/questions`.
+- Recommendation result from `POST /api/recommendations`.
+- Product card from `GET /api/fragrances/{id}`.
+- Admin login and product creation form.
+- Admin photo upload through `POST /api/admin/uploads/fragrance-photo`.
+
+## Admin
+
+For local Docker development, the default admin account is configured in `docker-compose.yml`:
+
+```text
+admin@aromatype.local
+local-admin-password
+```

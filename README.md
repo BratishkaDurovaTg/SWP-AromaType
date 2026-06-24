@@ -13,6 +13,48 @@ docs/      API contract, database schema notes, product docs
 
 ## Local Development
 
+### Full MVP v1 frontend + backend
+
+Requirements:
+
+- Docker Desktop
+- Python 3
+
+Run the backend and PostgreSQL from the repository root:
+
+```bash
+docker compose up --build
+```
+
+In a second terminal, run the frontend:
+
+```bash
+cd frontend
+python3 -m http.server 5173
+```
+
+Open the app:
+
+```text
+http://localhost:5173
+```
+
+Useful local links:
+
+- Frontend: `http://localhost:5173`
+- Backend health: `http://localhost:8080/health`
+- Swagger UI: `http://localhost:8080/docs`
+- OpenAPI spec: `http://localhost:8080/openapi.yaml`
+
+Admin account for local Docker development:
+
+```text
+admin@aromatype.local
+local-admin-password
+```
+
+### Backend only
+
 Start the backend stub:
 
 ```bash
@@ -42,13 +84,28 @@ user: aromatype
 password: aromatype
 ```
 
+Local Docker Compose also creates or updates an admin user from environment
+variables:
+
+```text
+ADMIN_EMAIL=admin@aromatype.local
+ADMIN_PASSWORD=local-admin-password
+```
+
+Public registration always creates a regular `user`. Admin access is not issued
+through `/api/auth/register`.
+
+Fragrance photos are uploaded through `POST /api/admin/uploads/fragrance-photo`
+as multipart field `photo`. The response `imageUrl` is then used in
+`POST /api/admin/fragrances`.
+
 ## Team Workflow
 
 - `main` stores stable versions.
 - Work in feature branches, for example `feature/backend-auth`.
 - Keep API changes documented in `docs/api/openapi.yaml`.
 - Frontend can use mock data until backend endpoints are ready.
-=======
+---
 # Week 2 Assignment Report - Aroma Type
 
 ## Project Information
@@ -73,7 +130,7 @@ Aroma Type is a Telegram Mini App focused on fragrance discovery and perfume rec
 
 # User Stories
 
-[user-stories.md](user-stories.md)
+[user-stories.md](docs/user-stories.md)
 
 ---
 
@@ -96,9 +153,7 @@ Covered User Stories:
 
 ## Swagger UI
 
-[Swagger UI](https://outlet-lonely-jacksonville-surfing.trycloudflare.com/docs)
-
-Note: the Swagger deployment is temporary and depends on the local development environment remaining active.
+Swagger UI is available locally at `http://localhost:8080/docs` after starting Docker Compose.
 
 ## OpenAPI Specification
 
@@ -121,7 +176,7 @@ Swagger UI was used for API testing and demonstration instead.
 
 ## Report
 
-[mvp-v0-report.md](mvp-v0-report.md)
+[mvp-v0-report.md](reports/week2/mvp-v0-report.md)
 
 ---
 
@@ -146,7 +201,7 @@ The current MVP v0 frontend deployment and temporary backend Swagger deployment 
 
 ## Public Video Demonstration
 
-[Video Demonstration](https://anonfilesnew.com/s/RuCHERmNy_q)
+The Week 2 demonstration was delivered separately and is not hosted in the repository.
 
 ---
 
@@ -197,25 +252,25 @@ All excluded links were manually verified in the browser before submission.
 
 ## Protected Default Branch
 
-![Protected Branch](images/protected-branch.png)
+![Protected Branch](reports/week2/protected-branch.png)
 
 ---
 
 ## Reviewed Pull Request
 
-![Reviewed PR](images/reviewed-pr.png)
+![Reviewed PR](reports/week2/reviewed-pr.png)
 
 ---
 
 ## Interactive Prototype
 
-![Prototype](images/prototype.png)
+![Prototype](reports/week2/prototype.png)
 
 ---
 
 ## MVP v0 Deployment
 
-![MVP v0](images/mvp-v0.png)
+![MVP v0](reports/week2/mvp-v0.png)
 
 ---
 
@@ -254,7 +309,7 @@ Related User Stories:
 * US-02
 
 Detailed smoke-check documentation is available in:
-[mvp-v0-report.md](mvp-v0-report.md)
+[mvp-v0-report.md](reports/week2/mvp-v0-report.md)
 
 ---
 
@@ -264,22 +319,22 @@ Detailed smoke-check documentation is available in:
 
 The customer approved transcript publication for Assignment 2 documentation purposes.
 
-[customer-meeting-transcript.md](customer-meeting-transcript.md)
+[customer-meeting-transcript.md](reports/week2/customer-meeting-transcript.md)
 
 ---
 
 ## Customer Meeting Summary
 
-[customer-meeting-summary.md](customer-meeting-summary.md)
+[customer-meeting-summary.md](reports/week2/customer-meeting-summary.md)
 
 ---
 
 # Weekly Analysis
 
-[analysis.md](analysis.md)
+[analysis.md](reports/week2/analysis.md)
 
 ---
 
 # LLM Usage Report
 
-[llm-report.md](llm-report.md)
+[llm-report.md](reports/week2/llm-report.md)

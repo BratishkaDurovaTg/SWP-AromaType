@@ -3,18 +3,23 @@ package config
 import (
 	"errors"
 	"os"
+	"strings"
 	"time"
 )
 
 const defaultPort = "8080"
 
 type Config struct {
-	AppEnv      string
-	Port        string
-	OpenAPIPath string
-	DatabaseURL string
-	JWTSecret   string
-	JWTTTL      time.Duration
+	AppEnv        string
+	Port          string
+	OpenAPIPath   string
+	DatabaseURL   string
+	JWTSecret     string
+	JWTTTL        time.Duration
+	AdminEmail    string
+	AdminPassword string
+	UploadDir     string
+	CORSOrigins   []string
 }
 
 func Load() (Config, error) {
@@ -24,12 +29,16 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		AppEnv:      envOrDefault("APP_ENV", "local"),
-		Port:        envOrDefault("PORT", defaultPort),
-		OpenAPIPath: resolveOpenAPIPath(os.Getenv("OPENAPI_PATH")),
-		DatabaseURL: envOrDefault("DATABASE_URL", "postgres://aromatype:aromatype@localhost:5432/aromatype?sslmode=disable"),
-		JWTSecret:   envOrDefault("JWT_SECRET", "local-dev-secret-change-me"),
-		JWTTTL:      jwtTTL,
+		AppEnv:        envOrDefault("APP_ENV", "local"),
+		Port:          envOrDefault("PORT", defaultPort),
+		OpenAPIPath:   resolveOpenAPIPath(os.Getenv("OPENAPI_PATH")),
+		DatabaseURL:   envOrDefault("DATABASE_URL", "postgres://aromatype:aromatype@localhost:5432/aromatype?sslmode=disable"),
+		JWTSecret:     envOrDefault("JWT_SECRET", "local-dev-secret-change-me"),
+		JWTTTL:        jwtTTL,
+		AdminEmail:    os.Getenv("ADMIN_EMAIL"),
+		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
+		UploadDir:     envOrDefault("UPLOAD_DIR", "uploads"),
+		CORSOrigins:   splitCSV(envOrDefault("CORS_ALLOWED_ORIGINS", "*")),
 	}
 
 	if cfg.Port == "" {
@@ -44,6 +53,15 @@ func Load() (Config, error) {
 	if cfg.JWTSecret == "" {
 		return Config{}, errors.New("JWT_SECRET must not be empty")
 	}
+	if (cfg.AdminEmail == "") != (cfg.AdminPassword == "") {
+		return Config{}, errors.New("ADMIN_EMAIL and ADMIN_PASSWORD must be configured together")
+	}
+	if cfg.AdminPassword != "" && len(cfg.AdminPassword) < 12 {
+		return Config{}, errors.New("ADMIN_PASSWORD must contain at least 12 characters")
+	}
+	if cfg.UploadDir == "" {
+		return Config{}, errors.New("UPLOAD_DIR must not be empty")
+	}
 
 	return cfg, nil
 }
@@ -53,6 +71,18 @@ func envOrDefault(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func splitCSV(value string) []string {
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			result = append(result, part)
+		}
+	}
+	return result
 }
 
 func resolveOpenAPIPath(configured string) string {
