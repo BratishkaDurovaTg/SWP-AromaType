@@ -105,7 +105,7 @@ as multipart field `photo`. The response `imageUrl` is then used in
 - Work in feature branches, for example `feature/backend-auth`.
 - Keep API changes documented in `docs/api/openapi.yaml`.
 - Frontend can use mock data until backend endpoints are ready.
-=======
+---
 # Week 2 Assignment Report - Aroma Type
 
 ## Project Information
