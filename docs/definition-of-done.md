@@ -10,12 +10,16 @@ A Product Backlog Item (PBI) may be marked as Done only when all of the followin
 
 4. Verification evidence is preserved through normal workflow artifacts such as issues, pull requests, reviews, workflows, or comments.
 
-5. Related documentation has been updated when necessary.
+5. Relevant CI checks pass, including formatting, static analysis, unit tests, integration tests, coverage reporting, Docker build, link checking, and the additional QA check documented in [testing.md](testing.md).
 
-6. CHANGELOG.md has been updated for every user-visible change.
+6. Critical product modules affected by the change keep at least 30% automated line coverage unless a documented replacement or TA-approved exception exists.
 
-7. For user stories, linked supporting PBIs provide the required implementation, review, and verification evidence.
+7. Related documentation has been updated when necessary.
 
-8. For implementation and technical PBIs, the linked pull request has been merged into the protected default branch.
+8. CHANGELOG.md has been updated for every user-visible change.
 
-9. The Product Backlog Item Work Status has been updated to Done.
+9. For user stories, linked supporting PBIs provide the required implementation, review, and verification evidence.
+
+10. For implementation and technical PBIs, the linked pull request has been merged into the protected default branch.
+
+11. The Product Backlog Item Work Status has been updated to Done.

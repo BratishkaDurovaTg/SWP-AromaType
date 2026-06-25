@@ -140,66 +140,73 @@ INSERT INTO tags (id, name, type) VALUES
 	('evening', 'вечерний', 'usage'),
 	('night', 'ночной', 'usage'),
 	('experimental', 'необычный', 'style'),
-	('reliable', 'надежный', 'style')
+	('reliable', 'надежный', 'style'),
+	('psych_drive', 'Драйв / Экстраверсия', 'psychotype'),
+	('psych_focus', 'Интеллект / Фокус', 'psychotype'),
+	('psych_aesthetic', 'Эстетика / Гедонизм', 'psychotype'),
+	('psych_power', 'Власть / Доминанта', 'psychotype')
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, type = EXCLUDED.type;
 
 INSERT INTO questions (id, text, type, sort_order, is_active) VALUES
-	('q1', 'Если описать вас в трёх словах через аромат, что это будет?', 'single_choice', 1, TRUE),
-	('q2', 'В каких жизненных моментах вы хотите ощущать аромат?', 'single_choice', 2, TRUE),
-	('q3', 'Представьте, что аромат — это цвет. Какой вы выберете?', 'single_choice', 3, TRUE),
-	('q4', 'Насколько вы хотите, чтобы люди замечали ваш аромат?', 'single_choice', 4, TRUE),
-	('q5', 'Если аромат был бы временем суток, какое это будет время?', 'single_choice', 5, TRUE),
-	('q6', 'Какой эффект на людей вам нравится оставлять через аромат?', 'single_choice', 6, TRUE),
-	('q7', 'Вы любите, когда аромат необычный или предпочитаете знакомое?', 'single_choice', 7, TRUE)
+	('q1', 'Вы входите в незнакомую компанию или на встречу. Ваше действие?', 'single_choice', 1, TRUE),
+	('q2', 'Где вы чувствуете максимальный прилив энергии?', 'single_choice', 2, TRUE),
+	('q3', 'Ваши планы резко рухнули из-за форс-мажора. Реакция?', 'single_choice', 3, TRUE),
+	('q4', 'Что ваш образ должен транслировать окружающим?', 'single_choice', 4, TRUE),
+	('q5', 'Вы беретесь за сложный новый проект. Что поможет победить?', 'single_choice', 5, TRUE),
+	('q6', 'Материал, который для вас означает «качество»:', 'single_choice', 6, TRUE),
+	('q7', 'Эффект от аромата, который вам нужен уже через 15 минут утром:', 'single_choice', 7, TRUE),
+	('q8', 'Какое описание аромата вызывает наибольший отклик?', 'single_choice', 8, TRUE)
 ON CONFLICT (id) DO UPDATE SET text = EXCLUDED.text, type = EXCLUDED.type, sort_order = EXCLUDED.sort_order, is_active = EXCLUDED.is_active;
 
 INSERT INTO answer_options (id, question_id, text, value, sort_order) VALUES
-	('q1_a1', 'q1', 'Спокойный и уверенный', 'calm_confident', 1),
-	('q1_a2', 'q1', 'Яркий и энергичный', 'bright_energy', 2),
-	('q1_a3', 'q1', 'Тайный и загадочный', 'secret_mystery', 3),
-	('q1_a4', 'q1', 'Романтичный и мягкий', 'romantic_soft', 4),
-	('q2_a1', 'q2', 'На работе или учебе', 'work_study', 1),
-	('q2_a2', 'q2', 'На встречах и свиданиях', 'dates_meetings', 2),
-	('q2_a3', 'q2', 'На вечеринках и фестивалях', 'parties_festivals', 3),
-	('q2_a4', 'q2', 'В повседневной жизни, как часть образа', 'daily_style', 4),
-	('q3_a1', 'q3', 'Светлый и прозрачный (легкий, свежий)', 'light_fresh', 1),
-	('q3_a2', 'q3', 'Тёплый и уютный (мягкий, согревающий)', 'warm_cozy', 2),
-	('q3_a3', 'q3', 'Яркий и насыщенный (выразительный, динамичный)', 'bright_dynamic', 3),
-	('q3_a4', 'q3', 'Темный и глубокий (интригующий, загадочный)', 'dark_deep', 4),
-	('q4_a1', 'q4', 'Почти не ощущают', 'barely_noticeable', 1),
-	('q4_a2', 'q4', 'Замечают время от времени', 'sometimes_noticeable', 2),
-	('q4_a3', 'q4', 'Часто обращают внимание', 'often_noticeable', 3),
-	('q4_a4', 'q4', 'Шлейф, который невозможно не заметить', 'strong_trail', 4),
-	('q5_a1', 'q5', 'Утро, свежо и бодро', 'morning_fresh', 1),
-	('q5_a2', 'q5', 'День, комфортно и спокойно', 'day_calm', 2),
-	('q5_a3', 'q5', 'Вечер, тепло и уютно', 'evening_warm', 3),
-	('q5_a4', 'q5', 'Ночь, таинственно и чувственно', 'night_mystery', 4),
-	('q6_a1', 'q6', 'Согревающее впечатление, мягкость', 'warm_soft_effect', 1),
-	('q6_a2', 'q6', 'Энергия и драйв', 'energy_drive', 2),
-	('q6_a3', 'q6', 'Очарование и притяжение', 'charm_attraction', 3),
-	('q6_a4', 'q6', 'Тайна и интрига', 'mystery_intrigue', 4),
-	('q7_a1', 'q7', 'Интересно пробовать новое', 'try_new', 1),
-	('q7_a2', 'q7', 'Предпочитаю узнаваемое и надежное', 'reliable_known', 2),
-	('q7_a3', 'q7', 'Иногда экспериментирую', 'sometimes_experiment', 3),
-	('q7_a4', 'q7', 'Люблю неожиданное, смелое', 'bold_unexpected', 4)
+	('q1_a1', 'q1', 'Легко привлеку внимание, я в центре событий.', 'drive_attention', 1),
+	('q1_a2', 'q1', 'Займу позицию наблюдателя со стороны.', 'focus_observer', 2),
+	('q1_a3', 'q1', 'Найду одного собеседника для спокойной беседы.', 'aesthetic_private_talk', 3),
+	('q1_a4', 'q1', 'Возьму инициативу и направлю разговор.', 'power_initiative', 4),
+	('q2_a1', 'q2', 'В движении: фестивали, тусовки, путешествия.', 'drive_motion', 1),
+	('q2_a2', 'q2', 'В тишине: за сложной и глубокой работой.', 'focus_deep_work', 2),
+	('q2_a3', 'q2', 'В красивом месте: концептуальный ресторан, выставка.', 'aesthetic_beautiful_place', 3),
+	('q2_a4', 'q2', 'В условиях вызова: важные переговоры или спорт.', 'power_challenge', 4),
+	('q3_a1', 'q3', 'Легко импровизирую на ходу.', 'drive_improvise', 1),
+	('q3_a2', 'q3', 'Спокойно анализирую новые вводные данные.', 'focus_analyze', 2),
+	('q3_a3', 'q3', 'Беру паузу, чтобы вернуть внутренний баланс.', 'aesthetic_balance', 3),
+	('q3_a4', 'q3', 'Беру контроль на себя и перестраиваю ситуацию.', 'power_control', 4),
+	('q4_a1', 'q4', 'Харизму, открытость и оптимизм.', 'drive_charisma', 1),
+	('q4_a2', 'q4', 'Независимость, интеллект и загадку.', 'focus_intellect', 2),
+	('q4_a3', 'q4', 'Безупречный вкус, стиль и ухоженность.', 'aesthetic_taste', 3),
+	('q4_a4', 'q4', 'Силу, авторитет и уверенность лидера.', 'power_authority', 4),
+	('q5_a1', 'q5', 'Способность быстро адаптироваться и общаться.', 'drive_adapt', 1),
+	('q5_a2', 'q5', 'Глубокий анализ и алгоритмы.', 'focus_algorithms', 2),
+	('q5_a3', 'q5', 'Прошлый опыт и перфекционизм в деталях.', 'aesthetic_perfection', 3),
+	('q5_a4', 'q5', 'Железная дисциплина и вера в свой результат.', 'power_discipline', 4),
+	('q6_a1', 'q6', 'Технологичная ткань, легкий лен или хлопок.', 'drive_light_fabric', 1),
+	('q6_a2', 'q6', 'Плотное сукно, тяжелый твид или шерсть.', 'focus_dense_wool', 2),
+	('q6_a3', 'q6', 'Мягкий кашемир премиум-качества или шелк.', 'aesthetic_cashmere', 3),
+	('q6_a4', 'q6', 'Толстая дорогая кожа или грубая замша.', 'power_leather', 4),
+	('q7_a1', 'q7', 'Заряд энергии: мгновенно проснуться и взбодриться.', 'drive_energy_boost', 1),
+	('q7_a2', 'q7', 'Режим фокуса: ментальный кокон для работы.', 'focus_cocoon', 2),
+	('q7_a3', 'q7', 'Гедонизм: комфорт и эстетическое удовольствие.', 'aesthetic_hedonism', 3),
+	('q7_a4', 'q7', 'Эффект брони: чувство силы и неуязвимости.', 'power_armor', 4),
+	('q8_a1', 'q8', 'Мокрый асфальт, цитрусы, мята и морской бриз.', 'drive_wet_asphalt', 1),
+	('q8_a2', 'q8', 'Старая библиотека, дорогой алкоголь, ладан и специи.', 'focus_library', 2),
+	('q8_a3', 'q8', 'Уходовый крем, новая замша и мягкая ваниль.', 'aesthetic_cream_suede', 3),
+	('q8_a4', 'q8', 'Салон нового авто, дорогой табак, костер и смола.', 'power_tobacco_resin', 4)
 ON CONFLICT (id) DO UPDATE SET question_id = EXCLUDED.question_id, text = EXCLUDED.text, value = EXCLUDED.value, sort_order = EXCLUDED.sort_order;
 
+DELETE FROM answer_option_tags
+WHERE answer_option_id IN (
+	SELECT id FROM answer_options WHERE question_id IN ('q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8')
+);
+
 INSERT INTO answer_option_tags (answer_option_id, tag_id, weight) VALUES
-	('q1_a1', 'calm', 3), ('q1_a1', 'confidence', 2), ('q1_a2', 'bright', 3), ('q1_a2', 'energy', 3),
-	('q1_a3', 'mystery', 3), ('q1_a3', 'deep', 2), ('q1_a4', 'romantic', 3), ('q1_a4', 'soft', 3),
-	('q2_a1', 'office', 3), ('q2_a1', 'day', 2), ('q2_a2', 'date', 3), ('q2_a2', 'romantic', 2),
-	('q2_a3', 'party', 3), ('q2_a3', 'bright', 2), ('q2_a4', 'daily', 3), ('q2_a4', 'reliable', 2),
-	('q3_a1', 'light', 3), ('q3_a1', 'fresh', 3), ('q3_a1', 'clean', 2), ('q3_a2', 'warm', 3),
-	('q3_a2', 'cozy', 3), ('q3_a2', 'soft', 2), ('q3_a3', 'bright', 3), ('q3_a3', 'energy', 2),
-	('q3_a4', 'deep', 3), ('q3_a4', 'mystery', 2), ('q4_a1', 'light', 3), ('q4_a1', 'calm', 2),
-	('q4_a2', 'daily', 2), ('q4_a2', 'reliable', 2), ('q4_a3', 'noticeable', 3), ('q4_a3', 'confidence', 2),
-	('q4_a4', 'trail', 3), ('q4_a4', 'deep', 2), ('q5_a1', 'morning', 3), ('q5_a1', 'fresh', 2),
-	('q5_a2', 'day', 3), ('q5_a2', 'calm', 2), ('q5_a3', 'evening', 3), ('q5_a3', 'warm', 2),
-	('q5_a4', 'night', 3), ('q5_a4', 'mystery', 2), ('q6_a1', 'warm', 3), ('q6_a1', 'soft', 2),
-	('q6_a2', 'energy', 3), ('q6_a2', 'bright', 2), ('q6_a3', 'romantic', 3), ('q6_a3', 'date', 2),
-	('q6_a4', 'mystery', 3), ('q6_a4', 'deep', 2), ('q7_a1', 'experimental', 3), ('q7_a1', 'bright', 1),
-	('q7_a2', 'reliable', 3), ('q7_a2', 'daily', 1), ('q7_a3', 'experimental', 2), ('q7_a3', 'reliable', 1),
-	('q7_a4', 'experimental', 3), ('q7_a4', 'mystery', 1)
+	('q1_a1', 'psych_drive', 3), ('q1_a2', 'psych_focus', 3), ('q1_a3', 'psych_aesthetic', 3), ('q1_a4', 'psych_power', 3),
+	('q2_a1', 'psych_drive', 3), ('q2_a2', 'psych_focus', 3), ('q2_a3', 'psych_aesthetic', 3), ('q2_a4', 'psych_power', 3),
+	('q3_a1', 'psych_drive', 3), ('q3_a2', 'psych_focus', 3), ('q3_a3', 'psych_aesthetic', 3), ('q3_a4', 'psych_power', 3),
+	('q4_a1', 'psych_drive', 3), ('q4_a2', 'psych_focus', 3), ('q4_a3', 'psych_aesthetic', 3), ('q4_a4', 'psych_power', 3),
+	('q5_a1', 'psych_drive', 3), ('q5_a2', 'psych_focus', 3), ('q5_a3', 'psych_aesthetic', 3), ('q5_a4', 'psych_power', 3),
+	('q6_a1', 'psych_drive', 3), ('q6_a2', 'psych_focus', 3), ('q6_a3', 'psych_aesthetic', 3), ('q6_a4', 'psych_power', 3),
+	('q7_a1', 'psych_drive', 3), ('q7_a2', 'psych_focus', 3), ('q7_a3', 'psych_aesthetic', 3), ('q7_a4', 'psych_power', 3),
+	('q8_a1', 'psych_drive', 3), ('q8_a2', 'psych_focus', 3), ('q8_a3', 'psych_aesthetic', 3), ('q8_a4', 'psych_power', 3)
 ON CONFLICT (answer_option_id, tag_id) DO UPDATE SET weight = EXCLUDED.weight;
 
 INSERT INTO fragrances (
@@ -236,11 +243,11 @@ ON CONFLICT (id) DO UPDATE SET
 	updated_at = now();
 
 INSERT INTO fragrance_tags (fragrance_id, tag_id, weight) VALUES
-	('fresh-office', 'fresh', 3), ('fresh-office', 'clean', 3), ('fresh-office', 'office', 3), ('fresh-office', 'calm', 2), ('fresh-office', 'day', 2), ('fresh-office', 'light', 2),
-	('warm-date', 'warm', 3), ('warm-date', 'cozy', 3), ('warm-date', 'date', 3), ('warm-date', 'romantic', 2), ('warm-date', 'soft', 2), ('warm-date', 'evening', 2),
-	('bright-party', 'bright', 3), ('bright-party', 'energy', 3), ('bright-party', 'party', 3), ('bright-party', 'noticeable', 2), ('bright-party', 'experimental', 1),
-	('mystic-night', 'mystery', 3), ('mystic-night', 'deep', 3), ('mystic-night', 'night', 3), ('mystic-night', 'trail', 2), ('mystic-night', 'experimental', 2),
-	('daily-soft', 'daily', 3), ('daily-soft', 'soft', 3), ('daily-soft', 'reliable', 3), ('daily-soft', 'calm', 2), ('daily-soft', 'light', 2)
+	('fresh-office', 'fresh', 3), ('fresh-office', 'clean', 3), ('fresh-office', 'office', 3), ('fresh-office', 'calm', 2), ('fresh-office', 'day', 2), ('fresh-office', 'light', 2), ('fresh-office', 'psych_focus', 3), ('fresh-office', 'psych_drive', 1),
+	('warm-date', 'warm', 3), ('warm-date', 'cozy', 3), ('warm-date', 'date', 3), ('warm-date', 'romantic', 2), ('warm-date', 'soft', 2), ('warm-date', 'evening', 2), ('warm-date', 'psych_aesthetic', 3),
+	('bright-party', 'bright', 3), ('bright-party', 'energy', 3), ('bright-party', 'party', 3), ('bright-party', 'noticeable', 2), ('bright-party', 'experimental', 1), ('bright-party', 'psych_drive', 3),
+	('mystic-night', 'mystery', 3), ('mystic-night', 'deep', 3), ('mystic-night', 'night', 3), ('mystic-night', 'trail', 2), ('mystic-night', 'experimental', 2), ('mystic-night', 'psych_focus', 2), ('mystic-night', 'psych_power', 3),
+	('daily-soft', 'daily', 3), ('daily-soft', 'soft', 3), ('daily-soft', 'reliable', 3), ('daily-soft', 'calm', 2), ('daily-soft', 'light', 2), ('daily-soft', 'psych_aesthetic', 2), ('daily-soft', 'psych_focus', 1)
 ON CONFLICT (fragrance_id, tag_id) DO UPDATE SET weight = EXCLUDED.weight;
 `)
 	return err

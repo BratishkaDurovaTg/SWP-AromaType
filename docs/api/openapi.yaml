@@ -128,6 +128,7 @@ paths:
                 - q5_a2
                 - q6_a1
                 - q7_a2
+                - q8_a2
       responses:
         "200":
           description: User aroma profile and recommended fragrances.
@@ -387,10 +388,10 @@ components:
           example: q1
         text:
           type: string
-          example: Спокойный и уверенный
+          example: Легко привлеку внимание, я в центре событий.
         value:
           type: string
-          example: calm_confident
+          example: drive_attention
         sortOrder:
           type: integer
           example: 1
@@ -436,18 +437,16 @@ components:
       properties:
         name:
           type: string
-          example: Спокойный минималист
+          example: Интеллект и фокус
         description:
           type: string
-          example: Вам подходят чистые, спокойные и ненавязчивые ароматы.
+          example: Вам подходят собранные, глубокие и немного загадочные ароматы.
         tags:
           type: array
           items:
             type: string
           example:
-            - спокойный
-            - чистый
-            - офисный
+            - Интеллект / Фокус
         profileBars:
           type: array
           items:

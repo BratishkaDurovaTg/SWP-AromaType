@@ -11,6 +11,14 @@ frontend/  Web client and admin UI
 docs/      API contract, database schema notes, product docs
 ```
 
+## Documentation
+
+- [Database schema](docs/db-schema.md)
+- [API contract](docs/api/openapi.yaml)
+- [Testing and QA status](docs/testing.md)
+- [Quality requirements](docs/quality-requirements.md)
+- [User acceptance tests](docs/user-acceptance-tests.md)
+
 ## Local Development
 
 ### Full MVP v1 frontend + backend

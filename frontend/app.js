@@ -1,5 +1,9 @@
 const ORDER_CONTACT_URL = "https://t.me/aroma_type_test_bot";
 const DEFAULT_TAG_IDS = [
+  "psych_drive",
+  "psych_focus",
+  "psych_aesthetic",
+  "psych_power",
   "fresh",
   "clean",
   "daily",
@@ -183,7 +187,7 @@ function renderIntro() {
       <div class="intro-time">3 минуты</div>
       <h1 class="intro-title">Расскажите<br>немного о<br>себе</h1>
       <div class="intro-line"></div>
-      <p class="intro-copy">Мы подберем ваш<br><span>персональный аромат</span><br>за 7 вопросов</p>
+      <p class="intro-copy">Мы подберем ваш<br><span>персональный аромат</span><br>за 8 вопросов</p>
       <div class="intro-spark" aria-hidden="true"></div>
 
       <div class="bottom-actions">
@@ -549,7 +553,7 @@ function renderAdminForm() {
       </label>
       <label class="field">
         <span>Теги для подбора</span>
-        <input class="input" name="tagIds" list="tag-suggestions" placeholder="fresh, clean, daily" />
+        <input class="input" name="tagIds" list="tag-suggestions" placeholder="psych_drive, fresh, clean" />
         <datalist id="tag-suggestions">
           ${DEFAULT_TAG_IDS.map((tag) => `<option value="${tag}"></option>`).join("")}
         </datalist>
@@ -622,12 +626,14 @@ function highlightQuestion(text) {
   const escaped = escapeHTML(text);
   const replacements = [
     ["через аромат", "<span>через аромат</span>"],
-    ["жизненных моментах", "<span>жизненных моментах</span>"],
-    ["ощущать аромат", "<span>ощущать аромат</span>"],
-    ["какой след", "<span>какой след</span>"],
-    ["какая погода", "<span>какая погода</span>"],
-    ["какой стиль", "<span>какой стиль</span>"],
-    ["ограничения", "<span>ограничения</span>"],
+    ["незнакомую компанию", "<span>незнакомую компанию</span>"],
+    ["максимальный прилив энергии", "<span>максимальный прилив энергии</span>"],
+    ["форс-мажора", "<span>форс-мажора</span>"],
+    ["транслировать окружающим", "<span>транслировать окружающим</span>"],
+    ["сложный новый проект", "<span>сложный новый проект</span>"],
+    ["означает «качество»", "<span>означает «качество»</span>"],
+    ["уже через 15 минут", "<span>уже через 15 минут</span>"],
+    ["наибольший отклик", "<span>наибольший отклик</span>"],
   ];
 
   return replacements.reduce((result, [source, target]) => result.replace(source, target), escaped);

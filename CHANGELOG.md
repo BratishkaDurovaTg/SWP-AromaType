@@ -14,7 +14,10 @@ All notable changes to AromaType are documented in this file.
 - Docker backend image build workflow.
 - Manual backend deployment workflow for VPS.
 - Issue templates and pull request template.
+- Automated backend unit and integration tests, coverage reporting, quality requirement docs, and dependency vulnerability scan.
 
 ### Changed
 
 - Renamed Figma asset path from `ux:ui/v1.fig` to `ux-ui/v1.fig` for Windows compatibility.
+- Updated the questionnaire to the 8-question psychotype structure from the latest product draft.
+- Updated recommendation profile logic to score four psychotype tags: drive, focus, aesthetic, and power.

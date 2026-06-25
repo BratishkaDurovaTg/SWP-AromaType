@@ -37,13 +37,19 @@ type AuthResult struct {
 	User        User
 }
 
+type userRepository interface {
+	CreateUser(ctx context.Context, user User) (User, error)
+	UpsertAdmin(ctx context.Context, user User) (User, error)
+	FindUserByEmail(ctx context.Context, email string) (User, error)
+}
+
 type Service struct {
-	repo      *Repository
+	repo      userRepository
 	jwtSecret []byte
 	jwtTTL    time.Duration
 }
 
-func NewService(repo *Repository, jwtSecret string, jwtTTL time.Duration) *Service {
+func NewService(repo userRepository, jwtSecret string, jwtTTL time.Duration) *Service {
 	return &Service{
 		repo:      repo,
 		jwtSecret: []byte(jwtSecret),
