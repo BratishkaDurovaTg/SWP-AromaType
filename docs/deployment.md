@@ -51,6 +51,14 @@ From `/opt/aromatype`:
 docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 ```
 
+The catalog bot is intentionally not started by the default production command.
+After creating a separate Telegram bot for catalog administration and setting
+`CATALOG_BOT_TOKEN` plus `CATALOG_BOT_PASSWORD`, start it explicitly:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env --profile catalogbot up -d --build catalogbot
+```
+
 Useful checks:
 
 ```bash

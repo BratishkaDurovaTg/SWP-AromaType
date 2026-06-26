@@ -33,8 +33,8 @@ services:
       DATABASE_URL: postgres://aromatype:aromatype@postgres:5432/aromatype?sslmode=disable
       UPLOAD_DIR: /app/uploads
       CORS_ALLOWED_ORIGINS: "*"
-      CATALOG_BOT_TOKEN: ${CATALOG_BOT_TOKEN}
-      CATALOG_BOT_PASSWORD: ${CATALOG_BOT_PASSWORD}
+      CATALOG_BOT_TOKEN: ${CATALOG_BOT_TOKEN:-}
+      CATALOG_BOT_PASSWORD: ${CATALOG_BOT_PASSWORD:-}
     volumes:
       - uploads_data:/app/uploads
     depends_on:
