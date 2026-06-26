@@ -9,45 +9,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/auth"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/config"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/questionnaire"
 )
-
-type authTestRepository struct {
-	usersByEmail map[string]auth.User
-}
-
-func newAuthTestRepository() *authTestRepository {
-	return &authTestRepository{usersByEmail: map[string]auth.User{}}
-}
-
-func (r *authTestRepository) CreateUser(_ context.Context, user auth.User) (auth.User, error) {
-	if _, exists := r.usersByEmail[user.Email]; exists {
-		return auth.User{}, auth.ErrEmailAlreadyExists
-	}
-	user.CreatedAt = time.Now().UTC()
-	user.UpdatedAt = user.CreatedAt
-	r.usersByEmail[user.Email] = user
-	return user, nil
-}
-
-func (r *authTestRepository) UpsertAdmin(_ context.Context, user auth.User) (auth.User, error) {
-	user.CreatedAt = time.Now().UTC()
-	user.UpdatedAt = user.CreatedAt
-	r.usersByEmail[user.Email] = user
-	return user, nil
-}
-
-func (r *authTestRepository) FindUserByEmail(_ context.Context, email string) (auth.User, error) {
-	user, ok := r.usersByEmail[email]
-	if !ok {
-		return auth.User{}, auth.ErrInvalidCredentials
-	}
-	return user, nil
-}
 
 type questionnaireTestRepository struct {
 	questions     []questionnaire.Question
@@ -97,14 +62,8 @@ func (r *questionnaireTestRepository) CreateFragrance(_ context.Context, fragran
 	return fragrance, nil
 }
 
-func newTestRouter(t *testing.T) (http.Handler, *auth.Service) {
+func newTestRouter(t *testing.T) http.Handler {
 	t.Helper()
-
-	authRepo := newAuthTestRepository()
-	authService := auth.NewService(authRepo, "test-secret", time.Hour)
-	if _, err := authService.EnsureAdmin(context.Background(), "admin@example.com", "very-strong-password"); err != nil {
-		t.Fatalf("EnsureAdmin returned error: %v", err)
-	}
 
 	questionnaireRepo := &questionnaireTestRepository{
 		questions: []questionnaire.Question{
@@ -131,9 +90,16 @@ func newTestRouter(t *testing.T) (http.Handler, *auth.Service) {
 				MiddleNotes: []byte(`["Мороженое"]`),
 				BaseNotes:   []byte(`["Абсолют ванили"]`),
 				MainAccords: []byte(`["Сладкий"]`),
-				TagID:       "psych_drive",
-				TagName:     "Драйв / Экстраверсия",
-				Weight:      3,
+				Psychotype:  questionnaire.PsychotypeDrive,
+				PsychotypeScores: []byte(`{
+					"drive": 100,
+					"focus": 20,
+					"aesthetic": 40,
+					"power": 35
+				}`),
+				TagID:   "psych_drive",
+				TagName: "Драйв / Экстраверсия",
+				Weight:  3,
 			},
 		},
 	}
@@ -146,11 +112,11 @@ func newTestRouter(t *testing.T) (http.Handler, *auth.Service) {
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 
-	return NewRouter(cfg, logger, authService, questionnaire.NewService(questionnaireRepo)), authService
+	return NewRouter(cfg, logger, questionnaire.NewService(questionnaireRepo))
 }
 
 func TestHealthEndpointReturnsOK(t *testing.T) {
-	router, _ := newTestRouter(t)
+	router := newTestRouter(t)
 
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/health", nil))
@@ -168,14 +134,7 @@ func TestHealthEndpointReturnsOK(t *testing.T) {
 }
 
 func TestPublicQuestionnaireFlow(t *testing.T) {
-	router, _ := newTestRouter(t)
-
-	registerBody := bytes.NewBufferString(`{"email":"user@example.com","password":"secret123"}`)
-	registerResponse := httptest.NewRecorder()
-	router.ServeHTTP(registerResponse, httptest.NewRequest(http.MethodPost, "/api/auth/register", registerBody))
-	if registerResponse.Code != http.StatusCreated {
-		t.Fatalf("expected register status 201, got %d: %s", registerResponse.Code, registerResponse.Body.String())
-	}
+	router := newTestRouter(t)
 
 	questionsResponse := httptest.NewRecorder()
 	router.ServeHTTP(questionsResponse, httptest.NewRequest(http.MethodGet, "/api/questions", nil))
@@ -199,29 +158,17 @@ func TestPublicQuestionnaireFlow(t *testing.T) {
 	}
 }
 
-func TestAdminCreateFragranceRequiresAdminToken(t *testing.T) {
-	router, _ := newTestRouter(t)
+func TestAuthEndpointIsNotRegistered(t *testing.T) {
+	router := newTestRouter(t)
 
-	userRegister := httptest.NewRecorder()
-	router.ServeHTTP(userRegister, httptest.NewRequest(
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, httptest.NewRequest(
 		http.MethodPost,
 		"/api/auth/register",
 		bytes.NewBufferString(`{"email":"user@example.com","password":"secret123"}`),
 	))
-	var userAuth authResponse
-	if err := json.Unmarshal(userRegister.Body.Bytes(), &userAuth); err != nil {
-		t.Fatalf("register response is not JSON: %v", err)
-	}
 
-	createRequest := httptest.NewRequest(
-		http.MethodPost,
-		"/api/admin/fragrances",
-		bytes.NewBufferString(`{"name":"Miami Shake","brand":"Juliette Has A Gun","price":8393}`),
-	)
-	createRequest.Header.Set("Authorization", "Bearer "+userAuth.AccessToken)
-	createResponse := httptest.NewRecorder()
-	router.ServeHTTP(createResponse, createRequest)
-	if createResponse.Code != http.StatusForbidden {
-		t.Fatalf("expected user token to be forbidden, got %d", createResponse.Code)
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("expected removed auth endpoint to return 404, got %d", response.Code)
 	}
 }

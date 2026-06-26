@@ -22,11 +22,11 @@ This document tracks manual UAT scenarios. UAT evidence supports release readine
 
 **Evidence:** To be recorded in the relevant sprint review notes or issue comments after customer/team validation.
 
-## UAT-003: Admin Adds a Fragrance
+## UAT-003: Catalog Manager Adds a Fragrance
 
 **Linked user stories:** US-002, US-010
 
-**Scenario:** An admin creates a fragrance record with product text, notes, accords, price, volume options, tags, and image URL.
+**Scenario:** A catalog manager creates a fragrance record with product text, notes, accords, price, volume options, psychotype scores, and image URL through the separate catalog management workflow.
 
 **Acceptance signal:** The created fragrance can appear in the recommendation/catalog flow when active.
 

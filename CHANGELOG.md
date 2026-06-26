@@ -15,6 +15,7 @@ All notable changes to AromaType are documented in this file.
 - Manual backend deployment workflow for VPS.
 - Issue templates and pull request template.
 - Automated backend unit and integration tests, coverage reporting, quality requirement docs, and dependency vulnerability scan.
+- Production Docker Compose and Caddy deployment configuration.
 
 ### Changed
 

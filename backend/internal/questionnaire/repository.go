@@ -134,12 +134,14 @@ SELECT
 	f.middle_notes,
 	f.base_notes,
 	f.main_accords,
-	ft.tag_id,
-	t.name AS tag_name,
-	ft.weight
+	f.psychotype,
+	f.psychotype_scores,
+	COALESCE(ft.tag_id, '') AS tag_id,
+	COALESCE(t.name, '') AS tag_name,
+	COALESCE(ft.weight, 0) AS weight
 FROM fragrances f
-JOIN fragrance_tags ft ON ft.fragrance_id = f.id
-JOIN tags t ON t.id = ft.tag_id
+LEFT JOIN fragrance_tags ft ON ft.fragrance_id = f.id
+LEFT JOIN tags t ON t.id = ft.tag_id
 WHERE f.is_active = TRUE
 ORDER BY f.name
 `)
@@ -155,6 +157,7 @@ func (r *Repository) GetFragranceByID(ctx context.Context, id string) (Fragrance
 	var fragrance Fragrance
 	var topNotes, middleNotes, baseNotes, mainAccords []byte
 	var volumeOptions []byte
+	var psychotypeScores []byte
 
 	err := r.db.QueryRow(ctx, `
 SELECT
@@ -169,6 +172,8 @@ SELECT
 	middle_notes,
 	base_notes,
 	main_accords,
+	psychotype,
+	psychotype_scores,
 	is_active
 FROM fragrances
 WHERE id = $1 AND is_active = TRUE
@@ -184,6 +189,8 @@ WHERE id = $1 AND is_active = TRUE
 		&middleNotes,
 		&baseNotes,
 		&mainAccords,
+		&fragrance.Psychotype,
+		&psychotypeScores,
 		&fragrance.IsActive,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -206,6 +213,9 @@ WHERE id = $1 AND is_active = TRUE
 		return Fragrance{}, err
 	}
 	if err := decodeVolumeOptions(volumeOptions, &fragrance.VolumeOptions); err != nil {
+		return Fragrance{}, err
+	}
+	if err := decodePsychotypeScores(psychotypeScores, &fragrance.PsychotypeScores); err != nil {
 		return Fragrance{}, err
 	}
 
@@ -233,6 +243,10 @@ func (r *Repository) CreateFragrance(ctx context.Context, fragrance Fragrance, t
 	if err != nil {
 		return Fragrance{}, err
 	}
+	psychotypeScores, err := encodePsychotypeScores(fragrance.PsychotypeScores)
+	if err != nil {
+		return Fragrance{}, err
+	}
 
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -243,10 +257,10 @@ func (r *Repository) CreateFragrance(ctx context.Context, fragrance Fragrance, t
 	err = tx.QueryRow(ctx, `
 INSERT INTO fragrances (
 	id, name, brand, image_url, price, volume_options, description,
-	top_notes, middle_notes, base_notes, main_accords, is_active
+	top_notes, middle_notes, base_notes, main_accords, psychotype, psychotype_scores, is_active
 ) VALUES (
 	$1, $2, $3, $4, $5, $6::JSONB, $7,
-	$8::JSONB, $9::JSONB, $10::JSONB, $11::JSONB, $12
+	$8::JSONB, $9::JSONB, $10::JSONB, $11::JSONB, $12, $13::JSONB, $14
 )
 RETURNING price::TEXT
 `,
@@ -261,6 +275,8 @@ RETURNING price::TEXT
 		middleNotes,
 		baseNotes,
 		mainAccords,
+		fragrance.Psychotype,
+		psychotypeScores,
 		fragrance.IsActive,
 	).Scan(&fragrance.Price)
 	if err != nil {
@@ -322,17 +338,35 @@ func decodeVolumeOptions(raw []byte, destination *[]VolumeOption) error {
 	return json.Unmarshal(raw, destination)
 }
 
+func encodePsychotypeScores(value PsychotypeScores) (string, error) {
+	bytes, err := json.Marshal(value)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func decodePsychotypeScores(raw []byte, destination *PsychotypeScores) error {
+	if len(raw) == 0 {
+		*destination = PsychotypeScores{}
+		return nil
+	}
+	return json.Unmarshal(raw, destination)
+}
+
 type FragranceTagRow struct {
-	ID          string `db:"id"`
-	Name        string `db:"name"`
-	Brand       string `db:"brand"`
-	ImageURL    string `db:"image_url"`
-	Price       string `db:"price"`
-	TopNotes    []byte `db:"top_notes"`
-	MiddleNotes []byte `db:"middle_notes"`
-	BaseNotes   []byte `db:"base_notes"`
-	MainAccords []byte `db:"main_accords"`
-	TagID       string `db:"tag_id"`
-	TagName     string `db:"tag_name"`
-	Weight      int    `db:"weight"`
+	ID               string `db:"id"`
+	Name             string `db:"name"`
+	Brand            string `db:"brand"`
+	ImageURL         string `db:"image_url"`
+	Price            string `db:"price"`
+	TopNotes         []byte `db:"top_notes"`
+	MiddleNotes      []byte `db:"middle_notes"`
+	BaseNotes        []byte `db:"base_notes"`
+	MainAccords      []byte `db:"main_accords"`
+	Psychotype       string `db:"psychotype"`
+	PsychotypeScores []byte `db:"psychotype_scores"`
+	TagID            string `db:"tag_id"`
+	TagName          string `db:"tag_name"`
+	Weight           int    `db:"weight"`
 }

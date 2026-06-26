@@ -1140,24 +1140,9 @@ button {
   margin-top: 32px;
 }
 
-/* ─── Auth / Admin ─── */
-
-.auth-screen,
-.admin-screen {
-  min-height: var(--h);
-  padding: 32px 24px;
-  background: var(--cream);
-}
-
-.auth-panel,
-.admin-grid,
 .form {
   display: grid;
   gap: 14px;
-}
-
-.auth-panel {
-  margin-top: 180px;
 }
 
 .segmented {

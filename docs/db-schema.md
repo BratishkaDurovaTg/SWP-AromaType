@@ -1,14 +1,5 @@
 # AromaType Database Schema
 
-## users
-
-- id
-- email
-- password_hash
-- role
-- created_at
-- updated_at
-
 ## fragrances
 
 - id
@@ -22,6 +13,8 @@
 - middle_notes
 - base_notes
 - main_accords
+- psychotype
+- psychotype_scores
 - is_active
 - created_at
 - updated_at
@@ -69,7 +62,12 @@
 - In the current questionnaire, all `A` answers map to `psych_drive`,
   all `B` answers map to `psych_focus`, all `C` answers map to
   `psych_aesthetic`, and all `D` answers map to `psych_power`.
-- Fragrances are connected to tags through `fragrance_tags`.
-- The backend builds a user tag profile from selected answer options.
-- Each active fragrance receives a score based on matching tag weights.
-- The API returns the highest-scoring fragrances with short explanations.
+- Each fragrance stores one primary psychotype in `psychotype`:
+  `drive`, `focus`, `aesthetic`, `power`, or `balanced`.
+- Each fragrance also stores a flexible 0-100 score vector in `psychotype_scores`:
+  `drive`, `focus`, `aesthetic`, and `power`.
+- The backend builds a user psychotype profile from selected answer options.
+- Each active fragrance receives a score by comparing the user profile with the
+  fragrance score vector.
+- The API returns only the top 5 highest-scoring fragrances with short
+  explanations.

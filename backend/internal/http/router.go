@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/auth"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/config"
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/questionnaire"
 )
@@ -17,20 +16,17 @@ const serviceVersion = "0.1.0"
 type Router struct {
 	cfg                  config.Config
 	logger               *slog.Logger
-	authService          *auth.Service
 	questionnaireService *questionnaire.Service
 }
 
 func NewRouter(
 	cfg config.Config,
 	logger *slog.Logger,
-	authService *auth.Service,
 	questionnaireService *questionnaire.Service,
 ) http.Handler {
 	router := &Router{
 		cfg:                  cfg,
 		logger:               logger,
-		authService:          authService,
 		questionnaireService: questionnaireService,
 	}
 
@@ -38,13 +34,9 @@ func NewRouter(
 	mux.HandleFunc("GET /health", router.handleHealth)
 	mux.HandleFunc("GET /docs", router.handleDocs)
 	mux.HandleFunc("GET /openapi.yaml", router.handleOpenAPI)
-	mux.HandleFunc("POST /api/auth/register", router.handleRegister)
-	mux.HandleFunc("POST /api/auth/login", router.handleLogin)
 	mux.HandleFunc("GET /api/questions", router.handleQuestions)
 	mux.HandleFunc("POST /api/recommendations", router.handleRecommendations)
 	mux.HandleFunc("GET /api/fragrances/{id}", router.handleFragrance)
-	mux.HandleFunc("POST /api/admin/uploads/fragrance-photo", router.handleUploadFragrancePhoto)
-	mux.HandleFunc("POST /api/admin/fragrances", router.handleCreateFragrance)
 	mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadDir))))
 
 	if err := os.MkdirAll(cfg.UploadDir, 0o755); err != nil {

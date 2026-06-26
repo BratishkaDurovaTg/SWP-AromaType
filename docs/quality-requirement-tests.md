@@ -16,17 +16,17 @@ This document lists automated QRT evidence. Manual reviews, customer notes, and 
 
 **Evidence location:** Coverage artifact `backend-coverage` and backend workflow logs.
 
-## QRT-002: Admin Endpoint Access Control
+## QRT-002: Recommendation Set Size
 
-**Linked quality requirement:** [QR-002](quality-requirements.md#qr-002-admin-endpoint-access-control)
+**Linked quality requirement:** [QR-002](quality-requirements.md#qr-002-recommendation-set-size)
 
-**Verification method:** Automated integration test.
+**Verification method:** Automated unit test.
 
-**Test data, setup, or environment:** In-memory fake repositories, real HTTP router, real auth service, and test JWT secret.
+**Test data, setup, or environment:** Fixture answer weights and 8 candidate fragrances in `backend/internal/questionnaire/service_test.go`.
 
-**Automated command or CI check:** `go test ./...`, specifically `backend/internal/http/router_test.go`.
+**Automated command or CI check:** `go test ./...`, specifically `TestRecommendReturnsAtMostFiveItems`.
 
-**Expected measurable result:** A regular user JWT calling `POST /api/admin/fragrances` receives HTTP 403.
+**Expected measurable result:** The recommendation response contains exactly 5 items when more than 5 catalog items match.
 
 **Evidence location:** Backend workflow logs.
 

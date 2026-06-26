@@ -28,15 +28,7 @@ DROP TABLE IF EXISTS recommendations;
 DROP TABLE IF EXISTS aroma_profiles;
 DROP TABLE IF EXISTS questionnaire_answers;
 DROP TABLE IF EXISTS questionnaire_sessions;
-
-CREATE TABLE IF NOT EXISTS users (
-	id TEXT PRIMARY KEY,
-	email TEXT NOT NULL UNIQUE,
-	password_hash TEXT NOT NULL,
-	role TEXT NOT NULL CHECK (role IN ('user', 'admin')),
-	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+DROP TABLE IF EXISTS users;
 
 CREATE TABLE IF NOT EXISTS fragrances (
 	id TEXT PRIMARY KEY,
@@ -50,12 +42,16 @@ CREATE TABLE IF NOT EXISTS fragrances (
 	middle_notes JSONB NOT NULL DEFAULT '[]'::JSONB,
 	base_notes JSONB NOT NULL DEFAULT '[]'::JSONB,
 	main_accords JSONB NOT NULL DEFAULT '[]'::JSONB,
+	psychotype TEXT NOT NULL DEFAULT 'balanced' CHECK (psychotype IN ('drive', 'focus', 'aesthetic', 'power', 'balanced')),
+	psychotype_scores JSONB NOT NULL DEFAULT '{"drive":0,"focus":0,"aesthetic":0,"power":0}'::JSONB,
 	is_active BOOLEAN NOT NULL DEFAULT TRUE,
 	created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE fragrances ADD COLUMN IF NOT EXISTS volume_options JSONB NOT NULL DEFAULT '[]'::JSONB;
+ALTER TABLE fragrances ADD COLUMN IF NOT EXISTS psychotype TEXT NOT NULL DEFAULT 'balanced';
+ALTER TABLE fragrances ADD COLUMN IF NOT EXISTS psychotype_scores JSONB NOT NULL DEFAULT '{"drive":0,"focus":0,"aesthetic":0,"power":0}'::JSONB;
 ALTER TABLE fragrances DROP COLUMN IF EXISTS gender;
 ALTER TABLE fragrances DROP COLUMN IF EXISTS volume;
 ALTER TABLE fragrances DROP COLUMN IF EXISTS stock_status;
@@ -211,23 +207,28 @@ ON CONFLICT (answer_option_id, tag_id) DO UPDATE SET weight = EXCLUDED.weight;
 
 INSERT INTO fragrances (
 	id, name, brand, image_url, price, volume_options, description,
-	top_notes, middle_notes, base_notes, main_accords, is_active
+	top_notes, middle_notes, base_notes, main_accords, psychotype, psychotype_scores, is_active
 ) VALUES
 	('fresh-office', 'Fresh Office', 'AromaType', '', 490, '[{"volumeMl":50,"price":490},{"volumeMl":100,"price":890}]',
 	 'Чистый и свежий аромат для учебы, офиса и спокойного повседневного образа.',
-	 '["бергамот", "лимон"]', '["лаванда"]', '["мускус"]', '["свежий", "чистый"]', TRUE),
+	 '["бергамот", "лимон"]', '["лаванда"]', '["мускус"]', '["свежий", "чистый"]',
+	 'focus', '{"drive":35,"focus":85,"aesthetic":45,"power":20}', TRUE),
 	('warm-date', 'Warm Date', 'AromaType', '', 540, '[{"volumeMl":50,"price":540},{"volumeMl":100,"price":980}]',
 	 'Мягкий теплый аромат для встреч, свиданий и уютного вечернего настроения.',
-	 '["кардамон"]', '["жасмин"]', '["ваниль", "мускус"]', '["тёплый", "уютный"]', TRUE),
+	 '["кардамон"]', '["жасмин"]', '["ваниль", "мускус"]', '["тёплый", "уютный"]',
+	 'aesthetic', '{"drive":25,"focus":35,"aesthetic":90,"power":25}', TRUE),
 	('bright-party', 'Bright Party', 'AromaType', '', 590, '[{"volumeMl":50,"price":590},{"volumeMl":100,"price":1090}]',
 	 'Яркий энергичный аромат для вечеринок, фестивалей и заметного образа.',
-	 '["грейпфрут"]', '["имбирь"]', '["амброксан"]', '["яркий", "энергичный"]', TRUE),
+	 '["грейпфрут"]', '["имбирь"]', '["амброксан"]', '["яркий", "энергичный"]',
+	 'drive', '{"drive":95,"focus":20,"aesthetic":40,"power":45}', TRUE),
 	('mystic-night', 'Mystic Night', 'AromaType', '', 650, '[{"volumeMl":50,"price":650},{"volumeMl":100,"price":1190}]',
 	 'Глубокий и загадочный аромат для ночного настроения и смелого впечатления.',
-	 '["черный перец"]', '["ладан"]', '["ветивер", "амброксан"]', '["глубокий", "загадочный"]', TRUE),
+	 '["черный перец"]', '["ладан"]', '["ветивер", "амброксан"]', '["глубокий", "загадочный"]',
+	 'power', '{"drive":25,"focus":70,"aesthetic":35,"power":90}', TRUE),
 	('daily-soft', 'Daily Soft', 'AromaType', '', 450, '[{"volumeMl":50,"price":450},{"volumeMl":100,"price":790}]',
 	 'Надежный мягкий аромат на каждый день, когда хочется комфорта и универсальности.',
-	 '["мандарин"]', '["пудровые ноты"]', '["белый мускус"]', '["мягкий", "повседневный"]', TRUE)
+	 '["мандарин"]', '["пудровые ноты"]', '["белый мускус"]', '["мягкий", "повседневный"]',
+	 'aesthetic', '{"drive":25,"focus":55,"aesthetic":75,"power":15}', TRUE)
 ON CONFLICT (id) DO UPDATE SET
 	name = EXCLUDED.name,
 	brand = EXCLUDED.brand,
@@ -239,6 +240,8 @@ ON CONFLICT (id) DO UPDATE SET
 	middle_notes = EXCLUDED.middle_notes,
 	base_notes = EXCLUDED.base_notes,
 	main_accords = EXCLUDED.main_accords,
+	psychotype = EXCLUDED.psychotype,
+	psychotype_scores = EXCLUDED.psychotype_scores,
 	is_active = EXCLUDED.is_active,
 	updated_at = now();
 

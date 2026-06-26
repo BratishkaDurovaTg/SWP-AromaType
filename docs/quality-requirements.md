@@ -8,19 +8,19 @@ This document records maintained product quality requirements introduced for Ass
 
 **Scenario:** When a developer changes a critical backend product module under the standard CI environment, the module shall have automated tests that keep line coverage at or above 30%.
 
-**Why this matters:** AromaType's authentication, recommendation, and API modules support the core MVP user and admin workflows. Defects in these modules can block registration, recommendations, product details, or admin product creation.
+**Why this matters:** AromaType's recommendation and API modules support the core MVP user workflow. Defects in these modules can block the questionnaire, recommendations, or product details.
 
 **Linked quality requirement tests:** [QRT-001](quality-requirement-tests.md#qrt-001-critical-module-coverage)
 
-## QR-002: Admin Endpoint Access Control
+## QR-002: Recommendation Set Size
 
-**ISO/IEC 25010 sub-characteristic:** Integrity
+**ISO/IEC 25010 sub-characteristic:** Functional suitability
 
-**Scenario:** When a regular authenticated user calls an admin-only fragrance creation endpoint under the CI test environment, the API shall reject the request with HTTP 403.
+**Scenario:** When the recommendation service evaluates a catalog larger than the sample set size under the CI test environment, it shall return no more than 5 fragrance recommendations.
 
-**Why this matters:** Admin fragrance management changes product data shown to users. Regular users must not be able to create or modify catalog records.
+**Why this matters:** AromaType sells a compact sample set. The product must not overwhelm the user or promise more than the intended maximum number of samples.
 
-**Linked quality requirement tests:** [QRT-002](quality-requirement-tests.md#qrt-002-admin-endpoint-access-control)
+**Linked quality requirement tests:** [QRT-002](quality-requirement-tests.md#qrt-002-recommendation-set-size)
 
 ## QR-003: Recommendation Determinism
 

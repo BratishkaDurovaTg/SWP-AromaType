@@ -23,74 +23,6 @@ paths:
                 status: ok
                 service: aromatype-backend
                 version: 0.1.0
-  /api/auth/register:
-    post:
-      summary: Register user
-      operationId: registerUser
-      tags:
-        - Auth
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegisterRequest"
-            example:
-              email: user@example.com
-              password: password123
-      responses:
-        "201":
-          description: User registered and JWT issued.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthResponse"
-        "400":
-          description: Invalid input.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "409":
-          description: Email already exists.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/auth/login:
-    post:
-      summary: Login user
-      operationId: loginUser
-      tags:
-        - Auth
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LoginRequest"
-            example:
-              email: user@example.com
-              password: password123
-      responses:
-        "200":
-          description: User authenticated and JWT issued.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthResponse"
-        "400":
-          description: Invalid JSON.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Invalid credentials.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
   /api/questions:
     get:
       summary: Get questionnaire questions
@@ -168,96 +100,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-  /api/admin/fragrances:
-    post:
-      summary: Create fragrance as admin
-      operationId: createFragrance
-      tags:
-        - Admin
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateFragranceRequest"
-      responses:
-        "201":
-          description: Fragrance created.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Fragrance"
-        "400":
-          description: Invalid fragrance data.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Missing or invalid JWT.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Admin role is required.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-  /api/admin/uploads/fragrance-photo:
-    post:
-      summary: Upload fragrance photo as admin
-      operationId: uploadFragrancePhoto
-      tags:
-        - Admin
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - photo
-              properties:
-                photo:
-                  type: string
-                  format: binary
-      responses:
-        "201":
-          description: Photo uploaded.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UploadResponse"
-        "400":
-          description: Invalid upload.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Missing or invalid JWT.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Admin role is required.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
   schemas:
     HealthResponse:
       type: object
@@ -275,62 +118,6 @@ components:
         version:
           type: string
           example: 0.1.0
-    RegisterRequest:
-      type: object
-      required:
-        - email
-        - password
-      properties:
-        email:
-          type: string
-          format: email
-          example: user@example.com
-        password:
-          type: string
-          minLength: 6
-          example: password123
-    LoginRequest:
-      type: object
-      required:
-        - email
-        - password
-      properties:
-        email:
-          type: string
-          format: email
-          example: user@example.com
-        password:
-          type: string
-          example: password123
-    AuthResponse:
-      type: object
-      required:
-        - accessToken
-        - user
-      properties:
-        accessToken:
-          type: string
-          description: JWT access token.
-        user:
-          $ref: "#/components/schemas/User"
-    User:
-      type: object
-      required:
-        - id
-        - email
-        - role
-      properties:
-        id:
-          type: string
-          format: uuid
-        email:
-          type: string
-          format: email
-        role:
-          type: string
-          enum:
-            - user
-            - admin
     ErrorResponse:
       type: object
       required:
@@ -420,6 +207,7 @@ components:
           $ref: "#/components/schemas/AromaProfile"
         items:
           type: array
+          maxItems: 5
           items:
             $ref: "#/components/schemas/RecommendationItem"
         totalItems:
@@ -481,6 +269,8 @@ components:
         - brand
         - imageUrl
         - price
+        - psychotype
+        - psychotypeScores
         - mainAccords
         - keyNotes
         - matchPercent
@@ -502,6 +292,10 @@ components:
         price:
           type: string
           example: "490.00"
+        psychotype:
+          $ref: "#/components/schemas/Psychotype"
+        psychotypeScores:
+          $ref: "#/components/schemas/PsychotypeScores"
         mainAccords:
           type: array
           items:
@@ -533,6 +327,8 @@ components:
         - middleNotes
         - baseNotes
         - mainAccords
+        - psychotype
+        - psychotypeScores
         - isActive
       properties:
         id:
@@ -583,69 +379,50 @@ components:
           example:
             - свежий
             - чистый
+        psychotype:
+          $ref: "#/components/schemas/Psychotype"
+        psychotypeScores:
+          $ref: "#/components/schemas/PsychotypeScores"
         isActive:
           type: boolean
           example: true
-    CreateFragranceRequest:
+    Psychotype:
+      type: string
+      enum:
+        - drive
+        - focus
+        - aesthetic
+        - power
+        - balanced
+      example: focus
+    PsychotypeScores:
       type: object
       required:
-        - name
-        - brand
+        - drive
+        - focus
+        - aesthetic
+        - power
       properties:
-        name:
-          type: string
-          example: Citrus Day
-        brand:
-          type: string
-          example: AromaType
-        imageUrl:
-          type: string
-          example: https://example.com/citrus-day.jpg
-        price:
-          type: number
-          example: 490
-        volumeOptions:
-          type: array
-          items:
-            $ref: "#/components/schemas/VolumeOption"
-        description:
-          type: string
-          example: Легкий цитрусовый аромат на каждый день.
-        topNotes:
-          type: array
-          items:
-            type: string
-          example:
-            - лимон
-            - бергамот
-        middleNotes:
-          type: array
-          items:
-            type: string
-          example:
-            - чай
-        baseNotes:
-          type: array
-          items:
-            type: string
-          example:
-            - мускус
-        mainAccords:
-          type: array
-          items:
-            type: string
-          example:
-            - свежий
-        tagIds:
-          type: array
-          items:
-            type: string
-          example:
-            - fresh
-            - daily
-        isActive:
-          type: boolean
-          default: true
+        drive:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 35
+        focus:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 85
+        aesthetic:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 45
+        power:
+          type: integer
+          minimum: 0
+          maximum: 100
+          example: 20
     VolumeOption:
       type: object
       required:
@@ -658,11 +435,3 @@ components:
         price:
           type: number
           example: 490
-    UploadResponse:
-      type: object
-      required:
-        - imageUrl
-      properties:
-        imageUrl:
-          type: string
-          example: /uploads/0f4c1023-1d1d-4f67-a4d9-6d17ef6ff903.jpg
