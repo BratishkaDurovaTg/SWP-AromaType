@@ -36,6 +36,13 @@ Create `/opt/aromatype/.env` from [.env.production.example](../.env.production.e
 
 Do not commit production secrets to Git.
 
+Required catalog bot variables:
+
+```text
+CATALOG_BOT_TOKEN=...
+CATALOG_BOT_PASSWORD=...
+```
+
 ## Deploy
 
 From `/opt/aromatype`:
@@ -49,6 +56,7 @@ Useful checks:
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env ps
 docker compose -f docker-compose.prod.yml --env-file .env logs -f backend
+docker compose -f docker-compose.prod.yml --env-file .env logs -f catalogbot
 docker compose -f docker-compose.prod.yml --env-file .env logs -f caddy
 curl -fsS https://aroma-type.shop/health
 ```

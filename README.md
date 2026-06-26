@@ -18,6 +18,7 @@ docs/      API contract, database schema notes, product docs
 - [Testing and QA status](docs/testing.md)
 - [Quality requirements](docs/quality-requirements.md)
 - [User acceptance tests](docs/user-acceptance-tests.md)
+- [Catalog bot](docs/catalog-bot.md)
 - [Deployment guide](docs/deployment.md)
 
 ## Local Development
@@ -88,8 +89,8 @@ password: aromatype
 
 The public MVP API does not require registration or JWT. Users complete the
 questionnaire anonymously, receive up to 5 recommended fragrances, and order
-through the configured Telegram contact. Catalog management is planned through a
-separate Telegram bot workflow, not through this web client.
+through the configured Telegram contact. Catalog management is handled through a
+separate password-protected Telegram bot workflow, not through this web client.
 
 ## Team Workflow
 

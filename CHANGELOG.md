@@ -16,9 +16,11 @@ All notable changes to AromaType are documented in this file.
 - Issue templates and pull request template.
 - Automated backend unit and integration tests, coverage reporting, quality requirement docs, and dependency vulnerability scan.
 - Production Docker Compose and Caddy deployment configuration.
+- Password-protected Telegram catalog bot for adding, viewing, editing, toggling, and uploading fragrance photos.
 
 ### Changed
 
 - Renamed Figma asset path from `ux:ui/v1.fig` to `ux-ui/v1.fig` for Windows compatibility.
 - Updated the questionnaire to the 8-question psychotype structure from the latest product draft.
 - Updated recommendation profile logic to score four psychotype tags: drive, focus, aesthetic, and power.
+- Moved catalog management out of the public web app and into the separate Telegram bot workflow.
