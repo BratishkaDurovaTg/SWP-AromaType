@@ -883,16 +883,16 @@ button {
   overflow: hidden;
 }
 
-.fragrance-card::after {
-  content: "01";
+.card-number {
   position: absolute;
   right: 10px;
   bottom: 14px;
   color: rgba(201, 190, 170, 0.36);
   font-family: var(--display);
   font-size: 48px;
+  line-height: 1;
+  pointer-events: none;
 }
-
 .product-image {
   width: 92px;
   aspect-ratio: 0.78;
