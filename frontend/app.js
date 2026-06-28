@@ -432,7 +432,7 @@ function renderResults() {
       </div>
 
       <div class="card-list">
-        ${visibleItems.length ? visibleItems.map(renderRecommendationCard).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
+        ${visibleItems.length ? visibleItems.map((item, index) => renderRecommendationCard(item, index)).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
       </div>
 
       <div class="bottom-actions">
@@ -444,7 +444,9 @@ function renderResults() {
   `);
 }
 
-function renderRecommendationCard(item) {
+function renderRecommendationCard(item, index) {
+  const cardNumber = String(index + 1).padStart(2, "0");
+
   return `
     <article class="fragrance-card" data-action="open-product" data-product-id="${escapeAttr(item.id)}">
       ${renderImage(item.imageUrl, item.name, "product-image")}
@@ -461,6 +463,8 @@ function renderRecommendationCard(item) {
           <span>${safePercent(item.matchPercent)}%</span>
         </div>
       </div>
+
+      <span class="card-number">${cardNumber}</span>
     </article>
   `;
 }
