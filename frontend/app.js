@@ -1,4 +1,120 @@
 const ORDER_CONTACT_URL = "https://t.me/aroma_type_test_bot";
+const PROFILE_HERO_IMAGES = {
+  "интеллект и фокус": "./assets/profile-focus.png",
+  "драйв и экстраверсия": "./assets/profile-drive.png",
+  "эстетика и гедонизм": "./assets/profile-aesthetic.png",
+  "власть и доминанта": "./assets/profile-dominance.png",
+  "сбалансированный профиль": "./assets/profile-balanced.png",
+  "сбалансированного профиля": "./assets/profile-balanced.png",
+};
+
+function normalizeProfileName(profileName) {
+  return String(profileName || "")
+    .trim()
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/\s+/g, " ");
+}
+
+function getProfileHeroImage(profileName) {
+  const normalized = normalizeProfileName(profileName);
+
+  if (PROFILE_HERO_IMAGES[normalized]) {
+    return PROFILE_HERO_IMAGES[normalized];
+  }
+
+  if (normalized.includes("интеллект") || normalized.includes("фокус")) {
+    return "./assets/profile-focus.png";
+  }
+
+  if (normalized.includes("драйв") || normalized.includes("экстраверс")) {
+    return "./assets/profile-drive.png";
+  }
+
+  if (normalized.includes("эстет") || normalized.includes("гедонизм")) {
+    return "./assets/profile-aesthetic.png";
+  }
+
+  if (normalized.includes("власть") || normalized.includes("доминант")) {
+    return "./assets/profile-dominance.png";
+  }
+
+  if (normalized.includes("сбаланс")) {
+    return "./assets/profile-balanced.png";
+  }
+
+  return "./assets/profile-balanced.png";
+}
+
+function injectProfileHeroStyles() {
+  if (document.getElementById("profile-hero-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "profile-hero-styles";
+  style.textContent = `
+    .profile-hero-image {
+      position: relative !important;
+      height: 360px !important;
+      margin: 0 -16px !important;
+      overflow: hidden !important;
+      background: var(--cream) !important;
+    }
+
+    .profile-hero-photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center top;
+      z-index: 0;
+    }
+
+    .profile-hero-image::before {
+      content: none !important;
+      display: none !important;
+    }
+
+    .profile-hero-image::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 150px;
+      background: linear-gradient(
+        180deg,
+        rgba(236, 229, 211, 0) 0%,
+        var(--cream) 100%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .profile-eyebrow {
+      position: absolute !important;
+      left: 18px !important;
+      bottom: 20px !important;
+      z-index: 2 !important;
+      min-width: 160px !important;
+      height: 44px !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+      border-radius: 500px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 18px !important;
+      background: rgba(249, 244, 241, 0.42) !important;
+      color: var(--ink) !important;
+      font-family: var(--display) !important;
+      font-size: 12px !important;
+      backdrop-filter: blur(10px);
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 const state = {
   apiBase: resolveApiBase(),
   questions: [],
@@ -13,6 +129,7 @@ const state = {
 const app = document.getElementById("app");
 const toast = document.getElementById("toast");
 
+injectProfileHeroStyles();
 initTelegram();
 window.addEventListener("hashchange", render);
 document.addEventListener("submit", handleSubmit);
@@ -206,6 +323,48 @@ function renderProfile() {
     navigate("quiz");
     return;
   }
+
+  const { profile, totalItems } = state.recommendations;
+  const heroImage = getProfileHeroImage(profile.name);
+
+  phone(`
+    <section class="screen profile-screen screen-with-footer">
+      <div class="brand-row profile-brand">
+        <span class="brand">Aroma Type<span class="spark">✦</span></span>
+      </div>
+
+      <div class="profile-hero-image">
+        <img
+          class="profile-hero-photo"
+          src="${escapeAttr(heroImage)}"
+          alt="${escapeAttr(profile.name)}"
+          loading="lazy"
+        />
+        <span class="eyebrow profile-eyebrow">Парфюмерный тип</span>
+      </div>
+
+      <h1 class="profile-title">${escapeHTML(profile.name)}</h1>
+      <p class="profile-description">${escapeHTML(profile.description)}</p>
+
+      <div class="divider"></div>
+      <h2 class="section-title">Профиль аромата</h2>
+      ${renderProfileBars(profile.profileBars || [])}
+
+      <h2 class="section-title">Черты характера</h2>
+      ${renderMetrics(profile.characterTraits || [])}
+
+      <div class="divider"></div>
+      <h2 class="section-title">Ключевые ноты</h2>
+      <div class="tag-row">${(profile.keyNotes || []).map(renderTag).join("")}</div>
+
+      <div class="bottom-actions">
+        <p class="small-copy result-count">Подобрано ${pluralize(totalItems, ["аромат", "аромата", "ароматов"])} для вас</p>
+        <button class="btn" data-action="show-results" type="button">Показать мои ароматы</button>
+        <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
+      </div>
+    </section>
+  `);
+}
 
   const { profile, items, totalItems } = state.recommendations;
 
