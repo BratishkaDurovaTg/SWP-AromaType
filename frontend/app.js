@@ -393,9 +393,9 @@ function renderProfile() {
       <div class="tag-row">${(profile.keyNotes || []).map(renderTag).join("")}</div>
 
       <div class="bottom-actions">
-        <p class="small-copy result-count">Подобрано ${pluralize(totalItems, ["аромат", "аромата", "ароматов"])} для вас</p>
-        <button class="btn" data-action="show-results" type="button">Показать мои ароматы</button>
-        <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
+  <p class="small-copy" style="width: 100%; text-align: center; margin-bottom: 12px;">Набор из 5 миниатюр</p>
+  <button class="btn" data-action="order-set" type="button">Заказать сет пробников</button>
+  <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
       </div>
     </section>
   `);
@@ -416,9 +416,9 @@ function renderResults() {
   phone(`
     <section class="screen podbor-screen screen-with-footer">
       <div class="brand-row podbor-header">
-        <button class="top-back" data-action="back-profile" type="button" aria-label="Назад">‹</button>
-        <span class="brand">Aroma Type<span class="spark">✦</span></span>
-        <div class="step-label">${totalItems}<br>${pluralize(totalItems, ["вариант", "варианта", "вариантов"]).replace(/^\d+\s/, "")}</div>
+  <button class="top-back" data-action="back-profile" type="button" aria-label="Назад">‹</button>
+  <span class="brand">Aroma Type<span class="spark">✦</span></span>
+  <span></span>
       </div>
       <div class="hairline"></div>
 
