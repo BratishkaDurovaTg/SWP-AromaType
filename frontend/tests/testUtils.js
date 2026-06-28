@@ -37,5 +37,5 @@ export async function loadApp(fetchMock = vi.fn()) {
 
   globalThis.fetch = fetchMock;
 
-  await import(`../app.js?test=${Date.now()}-${Math.random()}`);
+  await import("../app.js");
 }
