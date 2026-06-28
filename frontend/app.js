@@ -437,7 +437,7 @@ function renderResults() {
 
       <div class="bottom-actions">
         <p class="small-copy" style="text-align: center; margin-bottom: 12px;">Набор из 5 миниатюр · Доставка включена</p>
-        <button class="btn" data-action="order-set" type="button">Заказать сет пробников</button>
+        <button class="btn" data-action="order-set" type="button">В корзину</button>
         <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
       </div>
     </section>
