@@ -37,6 +37,7 @@ type session struct {
 	authenticated bool
 	action        string
 	targetID      string
+	field         string
 	step          int
 	draft         questionnaire.Fragrance
 }
@@ -85,6 +86,15 @@ func (b *Bot) Run(ctx context.Context) error {
 			if update.UpdateID >= offset {
 				offset = update.UpdateID + 1
 			}
+			if update.CallbackQuery != nil {
+				if err := b.handleCallback(ctx, *update.CallbackQuery); err != nil {
+					b.logger.Error("failed to handle callback", "error", err)
+					if update.CallbackQuery.Message != nil {
+						_ = b.telegram.sendMessage(ctx, update.CallbackQuery.Message.Chat.ID, "Ошибка: "+err.Error())
+					}
+				}
+				continue
+			}
 			if update.Message == nil {
 				continue
 			}
@@ -132,13 +142,16 @@ func (b *Bot) handleMessage(ctx context.Context, msg message) error {
 	if text == "" {
 		return b.telegram.sendMessage(ctx, chatID, "Отправьте команду или текстовое значение.")
 	}
-	if text == "/cancel" {
+	if text == "/cancel" || strings.EqualFold(text, "Отмена") {
 		b.sessions[chatID] = &session{authenticated: true}
-		return b.telegram.sendMessage(ctx, chatID, "Действие отменено.")
+		return b.telegram.sendMessageMarkup(ctx, chatID, "Действие отменено.", mainMenuKeyboard())
 	}
 
 	if s.action == "add" {
 		return b.handleAddStep(ctx, chatID, s, text)
+	}
+	if s.action == "setfield" {
+		return b.handlePendingField(ctx, chatID, s, text)
 	}
 
 	return b.handleCommand(ctx, chatID, s, text)
@@ -147,49 +160,134 @@ func (b *Bot) handleMessage(ctx context.Context, msg message) error {
 func (b *Bot) handleCommand(ctx context.Context, chatID int64, s *session, text string) error {
 	command, rest, _ := strings.Cut(text, " ")
 	switch command {
-	case "/help", "help":
+	case "/help", "help", "Помощь":
 		return b.sendMenu(ctx, chatID)
-	case "/list":
+	case "/list", "Каталог":
 		return b.list(ctx, chatID)
 	case "/view":
 		return b.view(ctx, chatID, strings.TrimSpace(rest))
-	case "/add":
-		s.action = "add"
-		s.step = addStepID
-		s.draft = questionnaire.Fragrance{
-			IsActive:         true,
-			Psychotype:       "balanced",
-			PsychotypeScores: questionnaire.PsychotypeScores{Drive: 50, Focus: 50, Aesthetic: 50, Power: 50},
-		}
-		return b.telegram.sendMessage(ctx, chatID, addPrompt(s.step))
+	case "/add", "Добавить":
+		return b.startAdd(ctx, chatID, s)
+	case "Добавить товар":
+		return b.startAdd(ctx, chatID, s)
 	case "/edit":
-		id := strings.TrimSpace(rest)
-		if id == "" {
-			return b.telegram.sendMessage(ctx, chatID, "Формат: /edit fragrance-id")
-		}
-		item, err := b.repo.GetFragrance(ctx, id)
-		if err != nil {
-			return err
-		}
-		return b.telegram.sendMessage(ctx, chatID, formatFragrance(item)+"\n\n"+editHelp(id))
+		return b.edit(ctx, chatID, strings.TrimSpace(rest))
 	case "/set":
 		return b.setField(ctx, chatID, strings.TrimSpace(rest))
 	case "/photo":
-		id := strings.TrimSpace(rest)
-		if id == "" {
-			return b.telegram.sendMessage(ctx, chatID, "Формат: /photo fragrance-id")
-		}
-		if _, err := b.repo.GetFragrance(ctx, id); err != nil {
-			return err
-		}
-		s.action = "photo"
-		s.targetID = id
-		return b.telegram.sendMessage(ctx, chatID, "Отправьте фото для товара "+id+".")
+		return b.startPhoto(ctx, chatID, s, strings.TrimSpace(rest))
 	case "/toggle":
 		return b.toggle(ctx, chatID, strings.TrimSpace(rest))
 	default:
-		return b.telegram.sendMessage(ctx, chatID, "Не понял команду.\n\n"+menuText())
+		return b.telegram.sendMessageMarkup(ctx, chatID, "Не понял команду.\n\n"+menuText(), mainMenuKeyboard())
 	}
+}
+
+func (b *Bot) handleCallback(ctx context.Context, callback callbackQuery) error {
+	if callback.ID != "" {
+		if err := b.telegram.answerCallbackQuery(ctx, callback.ID); err != nil {
+			b.logger.Warn("failed to answer callback query", "error", err)
+		}
+	}
+	if callback.Message == nil {
+		return nil
+	}
+
+	chatID := callback.Message.Chat.ID
+	s := b.session(chatID)
+	if !s.authenticated {
+		s.action = "password"
+		return b.telegram.sendMessage(ctx, chatID, "Сначала авторизация. Отправьте /start и введите пароль.")
+	}
+
+	data := strings.TrimSpace(callback.Data)
+	switch {
+	case data == "list":
+		return b.list(ctx, chatID)
+	case data == "add":
+		return b.startAdd(ctx, chatID, s)
+	case data == "help":
+		return b.sendMenu(ctx, chatID)
+	case strings.HasPrefix(data, "view:"):
+		return b.view(ctx, chatID, strings.TrimPrefix(data, "view:"))
+	case strings.HasPrefix(data, "edit:"):
+		return b.edit(ctx, chatID, strings.TrimPrefix(data, "edit:"))
+	case strings.HasPrefix(data, "photo:"):
+		return b.startPhoto(ctx, chatID, s, strings.TrimPrefix(data, "photo:"))
+	case strings.HasPrefix(data, "toggle:"):
+		return b.toggle(ctx, chatID, strings.TrimPrefix(data, "toggle:"))
+	case strings.HasPrefix(data, "field:"):
+		rest := strings.TrimPrefix(data, "field:")
+		id, field, ok := strings.Cut(rest, ":")
+		if !ok {
+			return b.telegram.sendMessage(ctx, chatID, "Не понял поле для редактирования.")
+		}
+		return b.startFieldEdit(ctx, chatID, s, id, field)
+	default:
+		return b.telegram.sendMessageMarkup(ctx, chatID, "Не понял кнопку.\n\n"+menuText(), mainMenuKeyboard())
+	}
+}
+
+func (b *Bot) startAdd(ctx context.Context, chatID int64, s *session) error {
+	s.action = "add"
+	s.step = addStepID
+	s.draft = questionnaire.Fragrance{
+		IsActive:         true,
+		Psychotype:       "balanced",
+		PsychotypeScores: questionnaire.PsychotypeScores{Drive: 50, Focus: 50, Aesthetic: 50, Power: 50},
+	}
+	return b.telegram.sendMessageMarkup(ctx, chatID, addPrompt(s.step), mainMenuKeyboard())
+}
+
+func (b *Bot) edit(ctx context.Context, chatID int64, id string) error {
+	if id == "" {
+		return b.telegram.sendMessage(ctx, chatID, "Выберите товар из каталога или напишите /edit fragrance-id.")
+	}
+	item, err := b.repo.GetFragrance(ctx, id)
+	if err != nil {
+		return err
+	}
+	return b.telegram.sendMessageMarkup(ctx, chatID, formatFragrance(item)+"\n\nВыберите поле для редактирования:", editFieldKeyboard(id))
+}
+
+func (b *Bot) startPhoto(ctx context.Context, chatID int64, s *session, id string) error {
+	if id == "" {
+		return b.telegram.sendMessage(ctx, chatID, "Выберите товар из каталога или напишите /photo fragrance-id.")
+	}
+	if _, err := b.repo.GetFragrance(ctx, id); err != nil {
+		return err
+	}
+	s.action = "photo"
+	s.targetID = id
+	return b.telegram.sendMessageMarkup(ctx, chatID, "Отправьте фото для товара "+id+".", mainMenuKeyboard())
+}
+
+func (b *Bot) startFieldEdit(ctx context.Context, chatID int64, s *session, id string, field string) error {
+	if _, err := b.repo.GetFragrance(ctx, id); err != nil {
+		return err
+	}
+	s.action = "setfield"
+	s.targetID = id
+	s.field = field
+	return b.telegram.sendMessageMarkup(ctx, chatID, fieldPrompt(field), mainMenuKeyboard())
+}
+
+func (b *Bot) handlePendingField(ctx context.Context, chatID int64, s *session, text string) error {
+	item, err := b.repo.GetFragrance(ctx, s.targetID)
+	if err != nil {
+		return err
+	}
+	if err := applyField(&item, s.field, text); err != nil {
+		return b.telegram.sendMessage(ctx, chatID, fieldError(s.field))
+	}
+	if err := b.repo.UpsertFragrance(ctx, item); err != nil {
+		return err
+	}
+
+	s.action = ""
+	s.targetID = ""
+	s.field = ""
+	return b.telegram.sendMessageMarkup(ctx, chatID, "Сохранено.\n\n"+formatFragrance(item), itemKeyboard(item.ID))
 }
 
 func (b *Bot) session(chatID int64) *session {
@@ -202,7 +300,7 @@ func (b *Bot) session(chatID int64) *session {
 }
 
 func (b *Bot) sendMenu(ctx context.Context, chatID int64) error {
-	return b.telegram.sendMessage(ctx, chatID, "Доступ открыт.\n\n"+menuText())
+	return b.telegram.sendMessageMarkup(ctx, chatID, "Доступ открыт.\n\n"+menuText(), mainMenuKeyboard())
 }
 
 func menuText() string {
@@ -238,7 +336,7 @@ func (b *Bot) list(ctx context.Context, chatID int64) error {
 		return err
 	}
 	if len(items) == 0 {
-		return b.telegram.sendMessage(ctx, chatID, "Каталог пуст.")
+		return b.telegram.sendMessageMarkup(ctx, chatID, "Каталог пуст.", mainMenuKeyboard())
 	}
 
 	var chunks []string
@@ -259,7 +357,12 @@ func (b *Bot) list(ctx context.Context, chatID int64) error {
 			return err
 		}
 	}
-	return nil
+
+	text := "Выберите товар кнопкой ниже."
+	if len(items) > listButtonLimit {
+		text = fmt.Sprintf("Показаны первые %d товаров из %d. Остальные можно открыть командой /view id.", listButtonLimit, len(items))
+	}
+	return b.telegram.sendMessageMarkup(ctx, chatID, text, listKeyboard(items))
 }
 
 func (b *Bot) view(ctx context.Context, chatID int64, id string) error {
@@ -270,7 +373,7 @@ func (b *Bot) view(ctx context.Context, chatID int64, id string) error {
 	if err != nil {
 		return err
 	}
-	return b.telegram.sendMessage(ctx, chatID, formatFragrance(item))
+	return b.telegram.sendMessageMarkup(ctx, chatID, formatFragrance(item), itemKeyboard(item.ID))
 }
 
 func (b *Bot) setField(ctx context.Context, chatID int64, rest string) error {
@@ -293,7 +396,7 @@ func (b *Bot) setField(ctx context.Context, chatID int64, rest string) error {
 	if err := b.repo.UpsertFragrance(ctx, item); err != nil {
 		return err
 	}
-	return b.telegram.sendMessage(ctx, chatID, "Сохранено.\n\n"+formatFragrance(item))
+	return b.telegram.sendMessageMarkup(ctx, chatID, "Сохранено.\n\n"+formatFragrance(item), itemKeyboard(item.ID))
 }
 
 func (b *Bot) toggle(ctx context.Context, chatID int64, id string) error {
@@ -308,7 +411,40 @@ func (b *Bot) toggle(ctx context.Context, chatID int64, id string) error {
 	if err := b.repo.UpsertFragrance(ctx, item); err != nil {
 		return err
 	}
-	return b.telegram.sendMessage(ctx, chatID, fmt.Sprintf("Готово: %s active=%t", item.ID, item.IsActive))
+	return b.telegram.sendMessageMarkup(ctx, chatID, fmt.Sprintf("Готово: %s active=%t", item.ID, item.IsActive), itemKeyboard(item.ID))
+}
+
+func fieldPrompt(field string) string {
+	switch strings.ToLower(strings.TrimSpace(field)) {
+	case "name":
+		return "Введите новое название товара."
+	case "brand":
+		return "Введите бренд."
+	case "price":
+		return "Введите цену числом, например 8393."
+	case "volumes":
+		return "Введите объемы: 50:8393, 100:12990. Если не нужно, отправьте -"
+	case "description":
+		return "Введите описание товара."
+	case "accords":
+		return "Введите основные аккорды через запятую."
+	case "top":
+		return "Введите верхние ноты через запятую. Если нет, отправьте -"
+	case "middle":
+		return "Введите средние ноты через запятую. Если нет, отправьте -"
+	case "base":
+		return "Введите базовые ноты через запятую. Если нет, отправьте -"
+	case "psychotype":
+		return "Введите психотип: drive, focus, aesthetic, power или balanced."
+	case "scores":
+		return "Введите scores: drive:20, focus:35, aesthetic:90, power:25."
+	case "active":
+		return "Активен товар? yes/no."
+	case "image_url":
+		return "Введите URL фото. Если хотите загрузить фото файлом, нажмите кнопку Фото в карточке товара."
+	default:
+		return "Введите новое значение."
+	}
 }
 
 func applyField(item *questionnaire.Fragrance, field string, value string) error {
@@ -455,7 +591,7 @@ func (b *Bot) handlePhoto(ctx context.Context, chatID int64, s *session, photos 
 	}
 	s.action = ""
 	s.targetID = ""
-	return b.telegram.sendMessage(ctx, chatID, "Фото обновлено: "+imageURL)
+	return b.telegram.sendMessageMarkup(ctx, chatID, "Фото обновлено: "+imageURL+"\n\n"+formatFragrance(item), itemKeyboard(item.ID))
 }
 
 func (b *Bot) saveTelegramPhoto(ctx context.Context, photos []photoSize) (string, error) {

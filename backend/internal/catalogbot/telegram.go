@@ -29,8 +29,9 @@ func newTelegramClient(token string) *telegramClient {
 }
 
 type update struct {
-	UpdateID int      `json:"update_id"`
-	Message  *message `json:"message"`
+	UpdateID      int            `json:"update_id"`
+	Message       *message       `json:"message"`
+	CallbackQuery *callbackQuery `json:"callback_query"`
 }
 
 type message struct {
@@ -62,6 +63,31 @@ type photoSize struct {
 type fileInfo struct {
 	FileID   string `json:"file_id"`
 	FilePath string `json:"file_path"`
+}
+
+type callbackQuery struct {
+	ID      string        `json:"id"`
+	From    *telegramUser `json:"from"`
+	Message *message      `json:"message"`
+	Data    string        `json:"data"`
+}
+
+type inlineKeyboardMarkup struct {
+	InlineKeyboard [][]inlineKeyboardButton `json:"inline_keyboard"`
+}
+
+type inlineKeyboardButton struct {
+	Text         string `json:"text"`
+	CallbackData string `json:"callback_data"`
+}
+
+type replyKeyboardMarkup struct {
+	Keyboard       [][]keyboardButton `json:"keyboard"`
+	ResizeKeyboard bool               `json:"resize_keyboard"`
+}
+
+type keyboardButton struct {
+	Text string `json:"text"`
 }
 
 func (c *telegramClient) getUpdates(ctx context.Context, offset int) ([]update, error) {
@@ -98,6 +124,39 @@ func (c *telegramClient) sendMessage(ctx context.Context, chatID int64, text str
 	}
 	if !response.OK {
 		return fmt.Errorf("telegram sendMessage returned ok=false")
+	}
+	return nil
+}
+
+func (c *telegramClient) sendMessageMarkup(ctx context.Context, chatID int64, text string, replyMarkup any) error {
+	payload := map[string]any{
+		"chat_id":                  chatID,
+		"text":                     text,
+		"disable_web_page_preview": true,
+		"reply_markup":             replyMarkup,
+	}
+	var response struct {
+		OK bool `json:"ok"`
+	}
+	if err := c.post(ctx, "sendMessage", payload, &response); err != nil {
+		return err
+	}
+	if !response.OK {
+		return fmt.Errorf("telegram sendMessage returned ok=false")
+	}
+	return nil
+}
+
+func (c *telegramClient) answerCallbackQuery(ctx context.Context, callbackQueryID string) error {
+	payload := map[string]any{"callback_query_id": callbackQueryID}
+	var response struct {
+		OK bool `json:"ok"`
+	}
+	if err := c.post(ctx, "answerCallbackQuery", payload, &response); err != nil {
+		return err
+	}
+	if !response.OK {
+		return fmt.Errorf("telegram answerCallbackQuery returned ok=false")
 	}
 	return nil
 }

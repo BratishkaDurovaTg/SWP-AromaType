@@ -10,12 +10,24 @@ the production environment variable `CATALOG_BOT_PASSWORD`.
 
 Do not commit the bot token or password to Git.
 
+## Menu Flow
+
+After password login, the bot shows menu buttons:
+
+- `Каталог` - open the fragrance list and choose a product with inline buttons.
+- `Добавить товар` - start the guided product creation flow.
+- `Помощь` - show command reference.
+- `Отмена` - cancel the current add/edit/photo flow.
+
+Inside a product card, inline buttons allow editing fields, replacing the photo,
+toggling `is_active`, and returning to the catalog.
+
 ## Commands
 
 - `/list` - show all fragrances, including inactive items.
 - `/view id` - show the full product card stored in the database.
 - `/add` - create a new fragrance through a guided step-by-step flow.
-- `/edit id` - show edit examples for a fragrance.
+- `/edit id` - show editable field buttons for a fragrance.
 - `/set id field value` - update a single field.
 - `/photo id` - upload or replace a product photo by sending a Telegram photo.
 - `/toggle id` - switch product `is_active` on or off.

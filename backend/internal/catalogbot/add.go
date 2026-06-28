@@ -124,7 +124,7 @@ func (b *Bot) handleAddStep(ctx context.Context, chatID int64, s *session, text 
 	}
 
 	s.step++
-	return b.telegram.sendMessage(ctx, chatID, addPrompt(s.step))
+	return b.telegram.sendMessageMarkup(ctx, chatID, addPrompt(s.step), mainMenuKeyboard())
 }
 
 func (b *Bot) handleAddPhoto(ctx context.Context, chatID int64, s *session, photos []photoSize) error {
@@ -162,7 +162,7 @@ func (b *Bot) finishAdd(ctx context.Context, chatID int64, s *session) error {
 	s.action = ""
 	s.step = 0
 	s.draft = questionnaire.Fragrance{}
-	return b.telegram.sendMessage(ctx, chatID, fmt.Sprintf("Товар создан.\n\n%s", formatFragrance(saved)))
+	return b.telegram.sendMessageMarkup(ctx, chatID, fmt.Sprintf("Товар создан.\n\n%s", formatFragrance(saved)), itemKeyboard(saved.ID))
 }
 
 func optionalList(value string) []string {
