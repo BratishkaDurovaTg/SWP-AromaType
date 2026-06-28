@@ -446,7 +446,7 @@ function renderResults() {
   `);
 }
 
-function renderRecommendationCard(item, index) {
+function renderRecommendationCard(item, index = 0) {
   const cardNumber = String(index + 1).padStart(2, "0");
 
   return `
@@ -465,6 +465,14 @@ function renderRecommendationCard(item, index) {
           <span>${safePercent(item.matchPercent)}%</span>
         </div>
       </div>
+
+      <button
+        class="card-add-btn"
+        data-action="add-to-cart"
+        data-product-id="${escapeAttr(item.id)}"
+        type="button"
+        aria-label="Добавить в корзину"
+      >+</button>
 
       <span class="card-number">${cardNumber}</span>
     </article>
