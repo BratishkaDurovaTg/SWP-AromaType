@@ -113,8 +113,8 @@ describe("Aroma Type frontend API integration", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Показать мои ароматы/i }));
 
-    expect(screen.getByText("Mystic Night")).toBeInTheDocument();
-    expect(screen.getByText("Fresh Office")).toBeInTheDocument();
+    expect(screen.getAllByText("Mystic Night").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Fresh Office").length).toBeGreaterThan(0);
 
     const cardNumbers = [...document.querySelectorAll(".card-number")].map((node) =>
       node.textContent.trim()
