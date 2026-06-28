@@ -332,3 +332,13 @@ The customer approved transcript publication for Assignment 2 documentation purp
 # LLM Usage Report
 
 [llm-report.md](reports/week2/llm-report.md)
+
+
+## Frontend tests
+
+To run frontend automated tests locally:
+
+```bash
+cd frontend
+npm install
+npm test
