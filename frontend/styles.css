@@ -1341,3 +1341,43 @@ button {
     font-size: 32px;
   }
 }
+
+.card-add-btn {
+  position: absolute;
+  left: 48px;
+  bottom: 26px;
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(138, 113, 104, 0.36);
+  border-radius: 50%;
+  background: rgba(249, 244, 241, 0.78);
+  color: var(--brown);
+  font-family: var(--display);
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 180ms ease, transform 180ms ease, background 180ms ease;
+  backdrop-filter: blur(10px);
+}
+
+.fragrance-card:hover .card-add-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.card-add-btn:active {
+  transform: scale(0.92);
+  background: rgba(249, 244, 241, 0.85);
+}
+
+@media (hover: none) {
+  .card-add-btn {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
