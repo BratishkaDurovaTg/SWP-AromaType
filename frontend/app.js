@@ -418,7 +418,9 @@ function renderResults() {
       <div class="brand-row podbor-header">
   <button class="top-back" data-action="back-profile" type="button" aria-label="Назад">‹</button>
   <span class="brand">Aroma Type<span class="spark">✦</span></span>
-  <span></span>
+  <button class="top-cart" data-action="order-set" type="button" aria-label="Корзина">
+    <img src="./assets/shopping-bag.png" alt="" class="top-cart-icon" />
+  </button>
       </div>
       <div class="hairline"></div>
 
