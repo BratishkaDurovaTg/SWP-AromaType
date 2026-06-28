@@ -31,5 +31,4 @@ In a deployed environment it uses the current origin.
 - Guided questionnaire loaded from `GET /api/questions`.
 - Recommendation result from `POST /api/recommendations`.
 - Product card from `GET /api/fragrances/{id}`.
-- Cart with selected fragrance volume and quantity.
-- Checkout screen with recipient data, city selection, delivery estimate, and static SBP payment method.
+- Telegram contact handoff for ordering a sample set or a fragrance.
