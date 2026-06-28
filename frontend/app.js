@@ -124,6 +124,7 @@ const state = {
   activeFilter: "all",
   selectedProduct: null,
   selectedVolumeIndex: 0,
+  cartItems: new Set(),
 };
 
 const app = document.getElementById("app");
@@ -361,41 +362,6 @@ function renderProfile() {
         <p class="small-copy result-count">Подобрано ${pluralize(totalItems, ["аромат", "аромата", "ароматов"])} для вас</p>
         <button class="btn" data-action="show-results" type="button">Показать мои ароматы</button>
         <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
-      </div>
-    </section>
-  `);
-}
-
-  const { profile, items, totalItems } = state.recommendations;
-
-  phone(`
-    <section class="screen profile-screen screen-with-footer">
-      <div class="brand-row profile-brand">
-        <span class="brand">Aroma Type<span class="spark">✦</span></span>
-      </div>
-
-      <div class="profile-hero-image" aria-hidden="true">
-        <span class="eyebrow profile-eyebrow">Парфюмерный тип</span>
-      </div>
-
-      <h1 class="profile-title">${escapeHTML(profile.name)}</h1>
-      <p class="profile-description">${escapeHTML(profile.description)}</p>
-
-      <div class="divider"></div>
-      <h2 class="section-title">Профиль аромата</h2>
-      ${renderProfileBars(profile.profileBars || [])}
-
-      <h2 class="section-title">Черты характера</h2>
-      ${renderMetrics(profile.characterTraits || [])}
-
-      <div class="divider"></div>
-      <h2 class="section-title">Ключевые ноты</h2>
-      <div class="tag-row">${(profile.keyNotes || []).map(renderTag).join("")}</div>
-
-      <div class="bottom-actions">
-  <p class="small-copy" style="width: 100%; text-align: center; margin-bottom: 12px;">Набор из 5 миниатюр</p>
-  <button class="btn" data-action="order-set" type="button">Заказать сет пробников</button>
-  <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
       </div>
     </section>
   `);
@@ -694,6 +660,10 @@ function handleClick(event) {
   }
   if (action === "open-product") {
     navigate(`product/${target.dataset.productId}`);
+  }
+  if (action === "add-to-cart") {
+    state.cartItems.add(target.dataset.productId);
+    showToast("Аромат добавлен в корзину");
   }
   if (action === "back-results") {
     navigate("results");
