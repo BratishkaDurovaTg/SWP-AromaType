@@ -1,100 +1,339 @@
-# AromaType - Assignment 4 Report (Week 4)
+# Week 4 Report
 
-## Testing Scope
+## Project Information
 
-Assignment 4 introduced maintained automated testing and QA gates for the AromaType product repository.
+**Project Name:** AromaType
 
-Primary testing documentation:
+**Short Description:**
 
-- [Testing status](../../docs/testing.md)
-- [Quality requirements](../../docs/quality-requirements.md)
-- [Quality requirement tests](../../docs/quality-requirement-tests.md)
-- [User acceptance tests](../../docs/user-acceptance-tests.md)
+A Telegram Mini App that recommends fragrances based on a personality questionnaire and allows users to explore products and order fragrance samples.
 
-## Critical Modules
+---
 
-| Critical module | Reason | Required coverage | Current coverage |
-|---|---|---:|---:|
-| `backend/internal/auth` | Registration, login, JWT, roles. | 30% | 52.6% |
-| `backend/internal/questionnaire` | Recommendation and fragrance business logic. | 30% | 45.7% |
-| `backend/internal/http` | API routing, admin access control, request/response behavior. | 30% | 37.3% |
+# Product Backlog
 
-Coverage was measured with:
+[Product Backlog Board](https://github.com/users/BratishkaDurovaTg/projects/1)
 
-```bash
-cd backend
-go test -coverprofile=coverage.out ./...
-go tool cover -func=coverage.out
-```
+---
 
-## Unit and Integration Tests
+# Sprint Backlog
 
-Unit tests were added for:
+[Sprint Backlog Board](https://github.com/users/BratishkaDurovaTg/projects/1/views/2)
 
-- JWT registration, login, admin bootstrap, token verification.
-- Rule-based recommendation ranking and profile generation.
-- Fragrance creation validation and input cleanup.
-- Photo content type allow-listing.
+---
 
-Integration tests were added for:
+# Sprint Milestone
 
-- Health endpoint response.
-- Public registration, questionnaire loading, and recommendation flow through the HTTP router.
-- Admin fragrance creation protection against regular user tokens.
+[Assignment 4 Sprint Milestone](https://github.com/BratishkaDurovaTg/SWP-AromaType/milestone/2)
 
-Tests are stored in normal Go test locations under `backend/internal/**`.
+### Sprint Goal
 
-## Additional QA Check Options Considered
+Deliver an improved MVP increment, validate it with the customer through User Acceptance Testing and Sprint Review, improve software quality, and establish automated testing and CI practices.
 
-The team considered these additional QA checks:
+### Sprint Dates
 
-- Dependency vulnerability scanning.
-- API contract validation against OpenAPI examples.
-- Basic performance smoke testing for key endpoints.
-- Accessibility checks for the frontend.
-- Dependency freshness or health checking.
+22 June 2026 – 28 June 2026
 
-## Additional QA Check Selected
+### Sprint Scope
 
-The selected additional QA check is Go dependency vulnerability scanning with `govulncheck`.
+This Sprint focused on improving the questionnaire and recommendation workflow, refining the user interface, implementing customer-requested improvements, introducing quality requirements, expanding testing activities, and configuring continuous integration.
 
-During local validation, this check found a reachable vulnerability in `github.com/golang-jwt/jwt/v5@v5.2.1`. The dependency was upgraded to `v5.2.2`, and the scan now reports that the application code is affected by 0 vulnerabilities.
+### Total Sprint Size
 
-## QA Objective or Risk Addressed
+**33 Story Points**
 
-The check addresses the risk that a vulnerable dependency or reachable Go standard-library vulnerability could affect authentication, admin catalog mutation, or backend deployment integrity.
+---
 
-## Why This Risk Matters
+# Delivered Product Changes
 
-AromaType stores user accounts, issues JWTs, and allows admins to create catalog items shown to users. Known reachable vulnerabilities in backend dependencies can create avoidable security and reliability risk even when the product logic itself is tested.
+During this Sprint, the team delivered an improved product increment based on customer feedback from the previous Sprint. The main changes included:
 
-## Where the Check Runs in CI
+* Improved questionnaire flow with revised questions and answer options.
+* Updated fragrance recommendation workflow and recommendation results.
+* User interface improvements for product cards and recommendation pages.
+* User Acceptance Testing (UAT) with the customer and collection of structured feedback.
+* Definition and documentation of quality requirements, testing activities, and User Acceptance Tests.
+* Configuration of Continuous Integration (CI) and quality assurance processes to support future development.
+* Updated Product Backlog based on the outcomes of the Sprint Review and customer feedback.
 
-The check runs in the GitHub Actions workflow:
 
-- [Additional QA workflow](../../.github/workflows/qa.yml)
+---
 
-The command is:
+# Runnable Product
 
-```bash
-cd backend
-$(go env GOPATH)/bin/govulncheck ./...
-```
+[Runnable Product / Hosted Artifact](https://t.me/aroma_type_test_bot)
 
-## CI Evidence
+---
 
-CI workflows used for Assignment 4:
+# Run Instructions
 
-- [Backend workflow](../../.github/workflows/backend.yml)
-- [Docker Build workflow](../../.github/workflows/docker-build.yml)
-- [Lychee workflow](../../.github/workflows/lychee.yml)
-- [Additional QA workflow](../../.github/workflows/qa.yml)
+[Root README.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/README.md)
 
-Branch protection evidence is maintained in the repository settings and protected-branch PR history.
+---
 
-## Important Limitations and Deferred QA Work
+# Customer Feedback
 
-- Repository/database methods are not yet covered with a live PostgreSQL integration test because current tests focus on service and API behavior with fake repositories.
-- Full browser end-to-end tests are deferred until the frontend routes stabilize.
-- Accessibility and performance checks were considered but deferred behind backend testing and dependency vulnerability scanning.
-- Manual UAT evidence supports release readiness but does not count as QRT evidence.
+| Feedback Point    | Resulting PBI / Issue | Status    | Response  |
+| ----------------- | --------------------- | --------- | --------- |
+|The customer asked to create the real article based quiestionnaire.        | [#16](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/16)                | Done |The questionnaire was redesigned by Sergey, according to reference article.        |
+| The customer asked to redesign UI of the app.         | [#43](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/43) [#24](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/24)                | Done   | Elizaveta redesigned the interface with a pastel color palette, improved typography, and updated component styling to make the app feel more premium and personalized.          |
+
+## Feedback Not Addressed
+
+Some customer requests were intentionally postponed because they were outside the scope of the current Sprint or depended on future functionality.
+
+The following items were deferred to future Product Backlog Items:
+
+* Payment integration was postponed until the core ordering workflow is completed.
+* A complete product catalog with real fragrance data and images will be added in a future Sprint.
+* Additional refinements to the questionnaire and recommendation logic will continue based on further customer feedback and User Acceptance Testing.
+
+These requests were added to the Product Backlog and will be prioritized during future Sprint Planning.
+
+---
+
+# Documentation
+
+## Roadmap
+
+[docs/roadmap.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/roadmap.md)
+
+## Definition of Done
+
+[docs/definition-of-done.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/definition-of-done.md)
+
+## Quality Requirements
+
+[docs/quality-requirements.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/quality-requirements.md)
+
+## Quality Requirement Tests
+
+[docs/quality-requirement-tests.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/quality-requirement-tests.md)
+
+## Testing Documentation
+
+[docs/testing.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/testing.md)
+
+## User Acceptance Tests
+
+[docs/user-acceptance-tests.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/user-acceptance-tests.md)
+
+---
+
+# Quality Assurance
+
+## Quality Model
+
+Selected ISO/IEC 25010 sub-characteristics:
+
+- Functional completeness
+- Functional correctness
+- Learnability
+- Operability
+- Availability
+- Modifiability
+- Testability
+- Time behaviour
+
+---
+
+## Testing Status
+
+Summarize the current testing status, including the critical modules and their line coverage.
+
+| Module                | Line Coverage | Status |
+| --------------------- | ------------- | ------ |
+| Backend               | Coverage report not generated          | Passed |
+| Frontend              | Coverage report not generated           | Passed |
+| Recommendation Engine | Covered by backend tests (coverage report not generated)          | Passed |
+
+---
+
+## Unit Tests
+
+- [Backend tests](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/backend.yml)
+- [Frontend tests](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/frontend-tests.yml)
+---
+
+## Integration Tests
+
+[Integration tests](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/backend.yml)
+
+---
+
+## Automated Quality Requirement Tests
+
+[Automated Quality Requirement Tests](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/qa.yml)
+
+---
+
+## Continuous Integration
+
+### CI Pipeline
+
+[CI Pipeline](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions)
+
+### Latest Protected Default Branch CI Run
+[Latest Protected Default Branch CI Run](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/runs/28330332833)
+
+
+---
+
+## Branch Protection
+
+Protected default branch / repository rules:
+
+[Default branch](https://github.com/BratishkaDurovaTg/SWP-AromaType/tree/main)
+
+Repository branch protection evidence is provided in the screenshot below.
+
+---
+
+## QA Evidence
+
+### Linting
+
+[Linting](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/qa.yml)
+
+### Coverage Report
+
+Coverage reporting is not yet configured. Testing results are available through the CI pipeline.
+
+### Test Results
+
+- [Backend tests](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/backend.yml)
+- [Frontend tests](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/frontend-tests.yml)
+
+### Additional QA Check
+
+[Additional QA Check](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/lychee.yml)
+
+### Docker Build Workflow
+
+[Docker Build Workflow](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/workflows/docker-build.yml)
+
+---
+
+## Quality Process
+
+The Definition of Done, automated tests, quality requirement tests, and CI checks will continue to be applied throughout future Sprints. Every Product Backlog Item must satisfy the established quality gates before it can be marked as Done.
+
+---
+
+# Release
+
+## SemVer Release
+
+[Release](https://github.com/BratishkaDurovaTg/SWP-AromaType/releases/tag/v1.1.0)
+
+## CHANGELOG
+
+[CHANGELOG.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/CHANGELOG.md)
+
+---
+
+# Demonstration
+
+## Public Demo Video
+
+[Video](https://drive.google.com/drive/folders/1r7azvxorwS8k0GFgO_8EMJ6djupHUXg2?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto)
+
+---
+
+# Customer Review
+
+## User Acceptance Testing Summary
+Results of the customer-executed User Acceptance Testing are documented in:
+
+[docs/user-acceptance-tests.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/user-acceptance-tests.md)
+
+## Customer Review Transcript
+
+[Customer Review Transcript](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/reports/week4/customer-review-transcript.md)
+
+## Customer Review Summary
+
+[reports/week4/customer-review-summary.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/reports/week4/customer-review-summary.md)
+
+---
+
+# Week 4 Reports
+
+## Reflection
+
+[reports/week4/reflection.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/reports/week4/reflection.md)
+
+## Retrospective
+
+[reports/week4/retrospective.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/reports/week4/retrospective.md)
+
+## LLM Report
+
+[reports/week4/llm-report.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/reports/week4/llm-report.md)
+
+---
+
+# Current Product Status
+
+The project now includes an improved MVP increment with an updated questionnaire, recommendation workflow, administrator functionality, quality requirements, automated testing, CI configuration, and documented Sprint Review and User Acceptance Testing results.
+
+---
+
+# Next Steps
+
+The next Sprint will focus on implementing the remaining customer feedback, improving test coverage, expanding automated quality verification, refining the checkout process, and completing the remaining Product Backlog Items.
+
+---
+
+# Contribution Traceability
+
+| Team Member | Issues | PRs/MRs | Reviews | Testing | Quality / Automation | Documentation |
+| ----------- | ------ | ------- | ------- | ------- | -------------------- | ------------- |
+| Nikita Matveev        | [#12](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/12), [#15](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/15), [#16](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/16), [#17](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/17), [#18](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/18), [#20](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/20)  | [#37](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/37)  | Code reviews  | Backend tests   | Backend workflows                | -         |
+| ELizaveta Sotnikova       | [#43](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/43)  |  [#52](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/52) | Design review  |UAT participation  | UI improvements        |Design updates       |
+| Viktoria Zorkaltceva | Documentation issues | Documentation PRs([#54](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/54), [#53](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/53), etc.) | Documentation review | UAT documentation | Definition of Done, quality documentation | README, customer review reports, reflection, retrospective, LLM report| 
+| Dilya Akhmerova | [#11](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/11), [#14](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/14) | Integrated in [#37](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/37) in frontend folder | UI review | Frontend testing | UI verification | - |
+| Sergey Berezhnoy | Sprint planning, roadmap, integration issues | Integrated in [#37](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/37) | PR review coordination | Sprint Review, UAT | Release management | Roadmap| 
+---
+
+# Screenshots
+
+## Sprint Milestone
+
+![Sprint Milestone](images/sprint-milestone.png)
+
+## Latest Protected Default Branch CI Run
+
+![CI Run](images/ci-run.png)
+
+## Branch Protection
+
+![Branch Protection](images/branch-protection.png)
+
+## Coverage / Test Report
+
+![Coverage](images/coverage.png)
+
+## Additional QA Check
+
+![QA Check](images/qa-check.png)
+
+## SemVer Release
+
+![Release](images/release.png)
+
+## Example Reviewed Issue-Linked PR
+
+![Reviewed PR](images/reviewed-pr.png)
+
+## Product Backlog
+
+![Product Backlog](images/product-backlog.png)
+
+## Sprint Backlog
+
+![Sprint Backlog](images/sprint-backlog.png)
+
+## Runnable Product
+
+![Runnable Product](images/runnable-product.png)
