@@ -143,6 +143,34 @@ button {
   background: rgba(255, 255, 255, 0.36);
 }
 
+.top-cart {
+  width: 52px;
+  height: 52px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.26);
+  box-shadow:
+    inset 8px -8px 10px rgba(0, 0, 0, 0.05),
+    inset -8px 8px 10px rgba(255, 255, 255, 0.10),
+    0 10px 24px rgba(69, 55, 50, 0.06);
+  backdrop-filter: blur(12px);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.top-cart:active {
+  transform: scale(0.93);
+  background: rgba(255, 255, 255, 0.36);
+}
+
+.top-cart-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
 .hairline {
   height: 1px;
   margin: 14px 32px 0;
@@ -883,16 +911,16 @@ button {
   overflow: hidden;
 }
 
-.fragrance-card::after {
-  content: "01";
+.card-number {
   position: absolute;
   right: 10px;
   bottom: 14px;
   color: rgba(201, 190, 170, 0.36);
   font-family: var(--display);
   font-size: 48px;
+  line-height: 1;
+  pointer-events: none;
 }
-
 .product-image {
   width: 92px;
   aspect-ratio: 0.78;
@@ -1140,24 +1168,9 @@ button {
   margin-top: 32px;
 }
 
-/* ─── Auth / Admin ─── */
-
-.auth-screen,
-.admin-screen {
-  min-height: var(--h);
-  padding: 32px 24px;
-  background: var(--cream);
-}
-
-.auth-panel,
-.admin-grid,
 .form {
   display: grid;
   gap: 14px;
-}
-
-.auth-panel {
-  margin-top: 180px;
 }
 
 .segmented {
@@ -1326,5 +1339,45 @@ button {
 
   .podbor-title {
     font-size: 32px;
+  }
+}
+
+.card-add-btn {
+  position: absolute;
+  left: 48px;
+  bottom: 26px;
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid rgba(138, 113, 104, 0.36);
+  border-radius: 50%;
+  background: rgba(249, 244, 241, 0.78);
+  color: var(--brown);
+  font-family: var(--display);
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 180ms ease, transform 180ms ease, background 180ms ease;
+  backdrop-filter: blur(10px);
+}
+
+.fragrance-card:hover .card-add-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.card-add-btn:active {
+  transform: scale(0.92);
+  background: rgba(249, 244, 241, 0.85);
+}
+
+@media (hover: none) {
+  .card-add-btn {
+    opacity: 1;
+    transform: scale(1);
   }
 }

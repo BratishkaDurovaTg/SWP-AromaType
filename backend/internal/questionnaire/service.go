@@ -16,11 +16,29 @@ var (
 	ErrInvalidFragrance  = errors.New("invalid fragrance")
 )
 
+const (
+	PsychotypeDrive     = "drive"
+	PsychotypeFocus     = "focus"
+	PsychotypeAesthetic = "aesthetic"
+	PsychotypePower     = "power"
+	PsychotypeBalanced  = "balanced"
+	MaxRecommendedItems = 5
+)
+
 type Service struct {
-	repo *Repository
+	repo fragranceRepository
 }
 
-func NewService(repo *Repository) *Service {
+type fragranceRepository interface {
+	GetQuestions(ctx context.Context) ([]Question, error)
+	GetOptionTagWeights(ctx context.Context, optionID string) (map[string]int, error)
+	GetTagNames(ctx context.Context, tagIDs []string) (map[string]string, error)
+	GetActiveFragranceTags(ctx context.Context) ([]FragranceTagRow, error)
+	GetFragranceByID(ctx context.Context, id string) (Fragrance, error)
+	CreateFragrance(ctx context.Context, fragrance Fragrance, tagIDs []string) (Fragrance, error)
+}
+
+func NewService(repo fragranceRepository) *Service {
 	return &Service{repo: repo}
 }
 
@@ -56,25 +74,38 @@ func (s *Service) Recommend(ctx context.Context, answerOptionIDs []string) (Reco
 		return RecommendationResponse{}, err
 	}
 
+	userPsychScores := psychotypeScoresFromTags(userTagWeights)
 	fragrances := make(map[string]*fragranceScore)
 	for _, row := range fragranceRows {
 		item, ok := fragrances[row.ID]
 		if !ok {
+			psychotype := normalizePsychotype(row.Psychotype)
+			psychotypeScores := decodePsychotypeScoresValue(row.PsychotypeScores, psychotype)
+			baseScore := psychotypeMatchScore(userPsychScores, psychotypeScores)
 			item = &fragranceScore{
 				RecommendationItem: RecommendationItem{
-					ID:          row.ID,
-					Name:        row.Name,
-					Brand:       row.Brand,
-					ImageURL:    row.ImageURL,
-					Price:       row.Price,
-					MainAccords: decodeStrings(row.MainAccords),
-					KeyNotes:    firstStrings(append(append(decodeStrings(row.TopNotes), decodeStrings(row.MiddleNotes)...), decodeStrings(row.BaseNotes)...), 3),
+					ID:               row.ID,
+					Name:             row.Name,
+					Brand:            row.Brand,
+					ImageURL:         row.ImageURL,
+					Price:            row.Price,
+					Psychotype:       psychotype,
+					PsychotypeScores: psychotypeScores,
+					MainAccords:      decodeStrings(row.MainAccords),
+					KeyNotes:         firstStrings(append(append(decodeStrings(row.TopNotes), decodeStrings(row.MiddleNotes)...), decodeStrings(row.BaseNotes)...), 3),
+					Score:            baseScore,
 				},
 				matchedTags: make(map[string]int),
+			}
+			if baseScore > 0 {
+				item.matchedTags[psychotypeLabel(item.Psychotype)] = baseScore
 			}
 			fragrances[row.ID] = item
 		}
 
+		if row.TagID == "" || strings.HasPrefix(row.TagID, "psych_") {
+			continue
+		}
 		if userWeight, ok := userTagWeights[row.TagID]; ok {
 			item.Score += userWeight * row.Weight
 			item.matchedTags[row.TagName] += userWeight * row.Weight
@@ -107,8 +138,8 @@ func (s *Service) Recommend(ctx context.Context, answerOptionIDs []string) (Reco
 		return items[i].Score > items[j].Score
 	})
 
-	if len(items) > 5 {
-		items = items[:5]
+	if len(items) > MaxRecommendedItems {
+		items = items[:MaxRecommendedItems]
 	}
 
 	return RecommendationResponse{
@@ -132,10 +163,13 @@ func (s *Service) CreateFragrance(ctx context.Context, payload CreateFragranceRe
 	payload.ImageURL = strings.TrimSpace(payload.ImageURL)
 	payload.Description = strings.TrimSpace(payload.Description)
 	payload.VolumeOptions = cleanVolumeOptions(payload.VolumeOptions)
+	payload.Psychotype = normalizePsychotype(payload.Psychotype)
+	payload.PsychotypeScores = normalizePsychotypeScores(payload.Psychotype, payload.PsychotypeScores)
 
 	if payload.Name == "" ||
 		payload.Brand == "" ||
-		payload.Price < 0 {
+		payload.Price < 0 ||
+		!isKnownPsychotype(payload.Psychotype) {
 		return Fragrance{}, ErrInvalidFragrance
 	}
 
@@ -145,18 +179,20 @@ func (s *Service) CreateFragrance(ctx context.Context, payload CreateFragranceRe
 	}
 
 	fragrance := Fragrance{
-		ID:            uuid.NewString(),
-		Name:          payload.Name,
-		Brand:         payload.Brand,
-		ImageURL:      payload.ImageURL,
-		Price:         strconv.FormatFloat(payload.Price, 'f', -1, 64),
-		VolumeOptions: payload.VolumeOptions,
-		Description:   payload.Description,
-		TopNotes:      cleanStrings(payload.TopNotes),
-		MiddleNotes:   cleanStrings(payload.MiddleNotes),
-		BaseNotes:     cleanStrings(payload.BaseNotes),
-		MainAccords:   cleanStrings(payload.MainAccords),
-		IsActive:      isActive,
+		ID:               uuid.NewString(),
+		Name:             payload.Name,
+		Brand:            payload.Brand,
+		ImageURL:         payload.ImageURL,
+		Price:            strconv.FormatFloat(payload.Price, 'f', -1, 64),
+		VolumeOptions:    payload.VolumeOptions,
+		Description:      payload.Description,
+		TopNotes:         cleanStrings(payload.TopNotes),
+		MiddleNotes:      cleanStrings(payload.MiddleNotes),
+		BaseNotes:        cleanStrings(payload.BaseNotes),
+		MainAccords:      cleanStrings(payload.MainAccords),
+		Psychotype:       payload.Psychotype,
+		PsychotypeScores: payload.PsychotypeScores,
+		IsActive:         isActive,
 	}
 
 	return s.repo.CreateFragrance(ctx, fragrance, uniqueNonEmpty(payload.TagIDs))
@@ -165,6 +201,88 @@ func (s *Service) CreateFragrance(ctx context.Context, payload CreateFragranceRe
 type fragranceScore struct {
 	RecommendationItem
 	matchedTags map[string]int
+}
+
+func psychotypeScoresFromTags(tagWeights map[string]int) PsychotypeScores {
+	return PsychotypeScores{
+		Drive:     tagWeights["psych_drive"],
+		Focus:     tagWeights["psych_focus"],
+		Aesthetic: tagWeights["psych_aesthetic"],
+		Power:     tagWeights["psych_power"],
+	}
+}
+
+func psychotypeMatchScore(user, fragrance PsychotypeScores) int {
+	return user.Drive*fragrance.Drive +
+		user.Focus*fragrance.Focus +
+		user.Aesthetic*fragrance.Aesthetic +
+		user.Power*fragrance.Power
+}
+
+func decodePsychotypeScoresValue(raw []byte, psychotype string) PsychotypeScores {
+	var scores PsychotypeScores
+	if err := decodePsychotypeScores(raw, &scores); err != nil {
+		return PsychotypeScores{}
+	}
+	return normalizePsychotypeScores(psychotype, scores)
+}
+
+func normalizePsychotype(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "" {
+		return PsychotypeBalanced
+	}
+	return value
+}
+
+func normalizePsychotypeScores(psychotype string, scores PsychotypeScores) PsychotypeScores {
+	scores = PsychotypeScores{
+		Drive:     clampScore(scores.Drive),
+		Focus:     clampScore(scores.Focus),
+		Aesthetic: clampScore(scores.Aesthetic),
+		Power:     clampScore(scores.Power),
+	}
+	if scores.Drive+scores.Focus+scores.Aesthetic+scores.Power > 0 {
+		return scores
+	}
+
+	switch psychotype {
+	case PsychotypeDrive:
+		scores.Drive = 100
+	case PsychotypeFocus:
+		scores.Focus = 100
+	case PsychotypeAesthetic:
+		scores.Aesthetic = 100
+	case PsychotypePower:
+		scores.Power = 100
+	default:
+		scores = PsychotypeScores{Drive: 50, Focus: 50, Aesthetic: 50, Power: 50}
+	}
+	return scores
+}
+
+func isKnownPsychotype(value string) bool {
+	switch value {
+	case PsychotypeDrive, PsychotypeFocus, PsychotypeAesthetic, PsychotypePower, PsychotypeBalanced:
+		return true
+	default:
+		return false
+	}
+}
+
+func psychotypeLabel(value string) string {
+	switch value {
+	case PsychotypeDrive:
+		return "Драйв / Экстраверсия"
+	case PsychotypeFocus:
+		return "Интеллект / Фокус"
+	case PsychotypeAesthetic:
+		return "Эстетика / Гедонизм"
+	case PsychotypePower:
+		return "Власть / Доминанта"
+	default:
+		return "Сбалансированный профиль"
+	}
 }
 
 func buildProfile(tagWeights map[string]int, tagNames map[string]string) Profile {
@@ -194,13 +312,13 @@ func buildProfile(tagWeights map[string]int, tagNames map[string]string) Profile
 	}
 
 	profileName := "Сбалансированный профиль"
-	description := "Вам подходят ароматы с понятным характером, умеренной заметностью и несколькими сценариями использования."
+	description := "Ваши ответы распределились между несколькими типами. Вам подходят ароматы с понятным характером, балансом комфорта и выразительности."
 
 	profileScores := map[string]int{
-		"mystery": tagWeights["mystery"] + tagWeights["deep"] + tagWeights["night"],
-		"bright":  tagWeights["bright"] + tagWeights["energy"] + tagWeights["party"] + tagWeights["noticeable"] + tagWeights["trail"],
-		"romance": tagWeights["romantic"] + tagWeights["soft"] + tagWeights["warm"] + tagWeights["cozy"] + tagWeights["date"],
-		"calm":    tagWeights["calm"] + tagWeights["clean"] + tagWeights["fresh"] + tagWeights["office"] + tagWeights["daily"] + tagWeights["reliable"] + tagWeights["light"],
+		"drive":     tagWeights["psych_drive"],
+		"focus":     tagWeights["psych_focus"],
+		"aesthetic": tagWeights["psych_aesthetic"],
+		"power":     tagWeights["psych_power"],
 	}
 
 	dominantProfile := "balanced"
@@ -213,38 +331,40 @@ func buildProfile(tagWeights map[string]int, tagNames map[string]string) Profile
 	}
 
 	switch dominantProfile {
-	case "mystery":
-		profileName = "Таинственный акцент"
-		description = "Вам ближе глубокие, необычные и интригующие ароматы, которые создают запоминающийся образ."
-	case "bright":
-		profileName = "Яркая энергия"
-		description = "Вам подходят выразительные, динамичные ароматы, которые заметны и поддерживают активный образ."
-	case "romance":
-		profileName = "Мягкая романтика"
-		description = "Вам подходят мягкие, теплые и притягательные ароматы для близкого общения и спокойного впечатления."
-	case "calm":
-		profileName = "Спокойный минималист"
-		description = "Вам подходят чистые, спокойные и ненавязчивые ароматы для повседневности, офиса и учебы."
+	case "drive":
+		profileName = "Драйв и экстраверсия"
+		description = "Вам близки ароматы с движением, свежим импульсом и открытой харизмой. Они помогают быстро включиться, звучать живо и не терять энергию."
+	case "focus":
+		profileName = "Интеллект и фокус"
+		description = "Вам подходят собранные, глубокие и немного загадочные ароматы. Они создают ощущение концентрации, дистанции и внутренней опоры."
+	case "aesthetic":
+		profileName = "Эстетика и гедонизм"
+		description = "Вам важны тактильность, ухоженность и удовольствие от деталей. Лучше всего раскрываются мягкие, чистые и красиво собранные композиции."
+	case "power":
+		profileName = "Власть и доминанта"
+		description = "Вам подходят плотные, уверенные и статусные ароматы. Они дают эффект собранности, силы и заметного личного присутствия."
 	}
 
 	if len(names) > 5 {
 		names = names[:5]
 	}
 
+	totalPsychScore := profileScores["drive"] + profileScores["focus"] + profileScores["aesthetic"] + profileScores["power"]
+
 	return Profile{
 		Name:        profileName,
 		Description: description,
 		Tags:        names,
 		ProfileBars: []ScoreMetric{
-			{Label: "Цветочный", Percent: clampPercent(tagWeights["romantic"]*18 + tagWeights["soft"]*12)},
-			{Label: "Зелёный", Percent: clampPercent(tagWeights["fresh"]*16 + tagWeights["clean"]*14)},
-			{Label: "Древесный", Percent: clampPercent(tagWeights["deep"]*16 + tagWeights["reliable"]*12)},
-			{Label: "Мускус", Percent: clampPercent(tagWeights["light"]*14 + tagWeights["daily"]*12)},
+			{Label: "Драйв", Percent: profilePercent(profileScores["drive"], totalPsychScore)},
+			{Label: "Фокус", Percent: profilePercent(profileScores["focus"], totalPsychScore)},
+			{Label: "Эстетика", Percent: profilePercent(profileScores["aesthetic"], totalPsychScore)},
+			{Label: "Доминанта", Percent: profilePercent(profileScores["power"], totalPsychScore)},
 		},
 		CharacterTraits: []ScoreMetric{
-			{Label: "Свежесть", Percent: clampPercent(tagWeights["fresh"]*18 + tagWeights["clean"]*16 + tagWeights["morning"]*10)},
-			{Label: "Универсальность", Percent: clampPercent(tagWeights["daily"]*18 + tagWeights["reliable"]*15 + tagWeights["office"]*12)},
-			{Label: "Лёгкий шлейф", Percent: clampPercent(tagWeights["light"]*18 + tagWeights["calm"]*12)},
+			{Label: "Социальный импульс", Percent: clampPercent(profileScores["drive"]*9 + profileScores["power"]*4)},
+			{Label: "Внутренняя собранность", Percent: clampPercent(profileScores["focus"]*9 + profileScores["power"]*5)},
+			{Label: "Чувство вкуса", Percent: clampPercent(profileScores["aesthetic"]*9 + profileScores["focus"]*3)},
 		},
 		KeyNotes: firstStrings(names, 5),
 	}
@@ -339,12 +459,33 @@ func scorePercent(score, topScore int) int {
 	return percent
 }
 
+func profilePercent(score, totalScore int) int {
+	if score <= 0 || totalScore <= 0 {
+		return 0
+	}
+	percent := score * 100 / totalScore
+	if percent > 100 {
+		return 100
+	}
+	return percent
+}
+
 func clampPercent(value int) int {
 	if value < 12 {
 		return 12
 	}
 	if value > 96 {
 		return 96
+	}
+	return value
+}
+
+func clampScore(value int) int {
+	if value < 0 {
+		return 0
+	}
+	if value > 100 {
+		return 100
 	}
 	return value
 }

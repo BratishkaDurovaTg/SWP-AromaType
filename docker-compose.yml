@@ -9,14 +9,32 @@ services:
       PORT: 8080
       OPENAPI_PATH: /app/docs/api/openapi.yaml
       DATABASE_URL: postgres://aromatype:aromatype@postgres:5432/aromatype?sslmode=disable
-      JWT_SECRET: local-dev-secret-change-me
-      JWT_TTL: 24h
-      ADMIN_EMAIL: admin@aromatype.local
-      ADMIN_PASSWORD: local-admin-password
       UPLOAD_DIR: /app/uploads
       CORS_ALLOWED_ORIGINS: "*"
     ports:
       - "8080:8080"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  catalogbot:
+    profiles:
+      - bot
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: aromatype-catalogbot
+    command: ["/app/aromatype-catalog-bot"]
+    environment:
+      APP_ENV: local
+      OPENAPI_PATH: /app/docs/api/openapi.yaml
+      DATABASE_URL: postgres://aromatype:aromatype@postgres:5432/aromatype?sslmode=disable
+      UPLOAD_DIR: /app/uploads
+      CORS_ALLOWED_ORIGINS: "*"
+      CATALOG_BOT_TOKEN: ${CATALOG_BOT_TOKEN:-}
+      CATALOG_BOT_PASSWORD: ${CATALOG_BOT_PASSWORD:-}
     volumes:
       - uploads_data:/app/uploads
     depends_on:

@@ -7,9 +7,19 @@ style, situations, and feelings rather than perfume terminology.
 
 ```text
 backend/   Go API, PostgreSQL migrations, recommendation logic
-frontend/  Web client and admin UI
+frontend/  Telegram Mini App web client
 docs/      API contract, database schema notes, product docs
 ```
+
+## Documentation
+
+- [Database schema](docs/db-schema.md)
+- [API contract](docs/api/openapi.yaml)
+- [Testing and QA status](docs/testing.md)
+- [Quality requirements](docs/quality-requirements.md)
+- [User acceptance tests](docs/user-acceptance-tests.md)
+- [Catalog bot](docs/catalog-bot.md)
+- [Deployment guide](docs/deployment.md)
 
 ## Local Development
 
@@ -46,13 +56,6 @@ Useful local links:
 - Swagger UI: `http://localhost:8080/docs`
 - OpenAPI spec: `http://localhost:8080/openapi.yaml`
 
-Admin account for local Docker development:
-
-```text
-admin@aromatype.local
-local-admin-password
-```
-
 ### Backend only
 
 Start the backend stub:
@@ -84,25 +87,15 @@ user: aromatype
 password: aromatype
 ```
 
-Local Docker Compose also creates or updates an admin user from environment
-variables:
-
-```text
-ADMIN_EMAIL=admin@aromatype.local
-ADMIN_PASSWORD=local-admin-password
-```
-
-Public registration always creates a regular `user`. Admin access is not issued
-through `/api/auth/register`.
-
-Fragrance photos are uploaded through `POST /api/admin/uploads/fragrance-photo`
-as multipart field `photo`. The response `imageUrl` is then used in
-`POST /api/admin/fragrances`.
+The public MVP API does not require registration or JWT. Users complete the
+questionnaire anonymously, receive up to 5 recommended fragrances, and order
+through the configured Telegram contact. Catalog management is handled through a
+separate password-protected Telegram bot workflow, not through this web client.
 
 ## Team Workflow
 
 - `main` stores stable versions.
-- Work in feature branches, for example `feature/backend-auth`.
+- Work in feature branches, for example `feature/questionnaire-logic`.
 - Keep API changes documented in `docs/api/openapi.yaml`.
 - Frontend can use mock data until backend endpoints are ready.
 ---
@@ -162,8 +155,9 @@ The OpenAPI specification is available through the Swagger UI deployment.
 
 ## Implemented API Endpoints
 
-* `POST /api/auth/register`
-* `POST /api/auth/login`
+* `GET /api/questions`
+* `POST /api/recommendations`
+* `GET /api/fragrances/{id}`
 
 ## Postman Collection
 
@@ -300,7 +294,7 @@ MVP v0 currently provides the technical foundation for:
 
 * Telegram Mini App integration;
 * frontend deployment;
-* backend authentication setup;
+* backend questionnaire and recommendation setup;
 * environment validation.
 
 Related User Stories:
@@ -338,3 +332,13 @@ The customer approved transcript publication for Assignment 2 documentation purp
 # LLM Usage Report
 
 [llm-report.md](reports/week2/llm-report.md)
+
+
+## Frontend tests
+
+To run frontend automated tests locally:
+
+```bash
+cd frontend
+npm install
+npm test

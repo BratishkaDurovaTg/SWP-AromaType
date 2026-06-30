@@ -1,32 +1,121 @@
 const ORDER_CONTACT_URL = "https://t.me/aroma_type_test_bot";
-const DEFAULT_TAG_IDS = [
-  "fresh",
-  "clean",
-  "daily",
-  "office",
-  "light",
-  "calm",
-  "romantic",
-  "soft",
-  "warm",
-  "bright",
-  "energy",
-  "party",
-  "noticeable",
-  "mystery",
-  "deep",
-  "night",
-  "reliable",
-  "cozy",
-  "date",
-  "trail",
-  "morning",
-];
+const PROFILE_HERO_IMAGES = {
+  "интеллект и фокус": "./assets/profile-focus.png",
+  "драйв и экстраверсия": "./assets/profile-drive.png",
+  "эстетика и гедонизм": "./assets/profile-aesthetic.png",
+  "власть и доминанта": "./assets/profile-dominance.png",
+  "сбалансированный профиль": "./assets/profile-balanced.png",
+  "сбалансированного профиля": "./assets/profile-balanced.png",
+};
+
+function normalizeProfileName(profileName) {
+  return String(profileName || "")
+    .trim()
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/\s+/g, " ");
+}
+
+function getProfileHeroImage(profileName) {
+  const normalized = normalizeProfileName(profileName);
+
+  if (PROFILE_HERO_IMAGES[normalized]) {
+    return PROFILE_HERO_IMAGES[normalized];
+  }
+
+  if (normalized.includes("интеллект") || normalized.includes("фокус")) {
+    return "./assets/profile-focus.png";
+  }
+
+  if (normalized.includes("драйв") || normalized.includes("экстраверс")) {
+    return "./assets/profile-drive.png";
+  }
+
+  if (normalized.includes("эстет") || normalized.includes("гедонизм")) {
+    return "./assets/profile-aesthetic.png";
+  }
+
+  if (normalized.includes("власть") || normalized.includes("доминант")) {
+    return "./assets/profile-dominance.png";
+  }
+
+  if (normalized.includes("сбаланс")) {
+    return "./assets/profile-balanced.png";
+  }
+
+  return "./assets/profile-balanced.png";
+}
+
+function injectProfileHeroStyles() {
+  if (document.getElementById("profile-hero-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "profile-hero-styles";
+  style.textContent = `
+    .profile-hero-image {
+      position: relative !important;
+      height: 360px !important;
+      margin: 0 -16px !important;
+      overflow: hidden !important;
+      background: var(--cream) !important;
+    }
+
+    .profile-hero-photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center top;
+      z-index: 0;
+    }
+
+    .profile-hero-image::before {
+      content: none !important;
+      display: none !important;
+    }
+
+    .profile-hero-image::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 150px;
+      background: linear-gradient(
+        180deg,
+        rgba(236, 229, 211, 0) 0%,
+        var(--cream) 100%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .profile-eyebrow {
+      position: absolute !important;
+      left: 18px !important;
+      bottom: 20px !important;
+      z-index: 2 !important;
+      min-width: 160px !important;
+      height: 44px !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.75) !important;
+      border-radius: 500px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 18px !important;
+      background: rgba(249, 244, 241, 0.42) !important;
+      color: var(--ink) !important;
+      font-family: var(--display) !important;
+      font-size: 12px !important;
+      backdrop-filter: blur(10px);
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 const state = {
-  authMode: "login",
-  token: localStorage.getItem("aroma_token") || "",
-  user: readJSON("aroma_user"),
   apiBase: resolveApiBase(),
   questions: [],
   selectedAnswers: new Map(),
@@ -35,11 +124,13 @@ const state = {
   activeFilter: "all",
   selectedProduct: null,
   selectedVolumeIndex: 0,
+  cartItems: new Set(),
 };
 
 const app = document.getElementById("app");
 const toast = document.getElementById("toast");
 
+injectProfileHeroStyles();
 initTelegram();
 window.addEventListener("hashchange", render);
 document.addEventListener("submit", handleSubmit);
@@ -68,28 +159,6 @@ function resolveApiBase() {
   return "";
 }
 
-function readJSON(key) {
-  try {
-    return JSON.parse(localStorage.getItem(key) || "null");
-  } catch {
-    return null;
-  }
-}
-
-function setAuth(result) {
-  state.token = result.accessToken;
-  state.user = result.user;
-  localStorage.setItem("aroma_token", result.accessToken);
-  localStorage.setItem("aroma_user", JSON.stringify(result.user));
-}
-
-function clearAuth() {
-  state.token = "";
-  state.user = null;
-  localStorage.removeItem("aroma_token");
-  localStorage.removeItem("aroma_user");
-}
-
 function route() {
   const hash = window.location.hash.replace(/^#/, "");
   return hash || "home";
@@ -109,14 +178,12 @@ function render() {
   }
 
   const screens = {
-    auth: renderAuth,
     home: renderHome,
     intro: renderIntro,
     quiz: renderQuiz,
     loading: renderLoading,
     profile: renderProfile,
     results: renderResults,
-    admin: renderAdmin,
   };
 
   (screens[currentRoute] || renderHome)();
@@ -124,39 +191,6 @@ function render() {
 
 function phone(content, className = "") {
   app.innerHTML = `<main class="phone ${className}"><div class="screen-transition">${content}</div></main>`;
-}
-
-function renderAuth() {
-  phone(`
-    <section class="screen auth-screen">
-      <div class="brand-row">
-        <div>
-          <p class="subtitle">Найдите аромат, который подходит именно вам.</p>
-          <span class="brand-big">Aroma Type<span class="spark">✦</span></span>
-        </div>
-      </div>
-
-      <div class="auth-panel">
-        <div class="segmented" aria-label="Auth mode">
-          <button class="segment ${state.authMode === "login" ? "active" : ""}" data-action="auth-mode" data-mode="login" type="button">Вход</button>
-          <button class="segment ${state.authMode === "register" ? "active" : ""}" data-action="auth-mode" data-mode="register" type="button">Регистрация</button>
-        </div>
-
-        <form class="form" data-form="auth" style="margin-top: 18px;">
-          <label class="field">
-            <span>Email</span>
-            <input class="input" name="email" type="email" autocomplete="email" placeholder="name@example.com" required />
-          </label>
-          <label class="field">
-            <span>Пароль</span>
-            <input class="input" name="password" type="password" autocomplete="${state.authMode === "login" ? "current-password" : "new-password"}" placeholder="минимум 6 символов" required minlength="6" />
-          </label>
-          <button class="btn" type="submit">${state.authMode === "login" ? "Войти" : "Создать аккаунт"}</button>
-        </form>
-
-      </div>
-    </section>
-  `);
 }
 
 function renderHome() {
@@ -183,7 +217,7 @@ function renderIntro() {
       <div class="intro-time">3 минуты</div>
       <h1 class="intro-title">Расскажите<br>немного о<br>себе</h1>
       <div class="intro-line"></div>
-      <p class="intro-copy">Мы подберем ваш<br><span>персональный аромат</span><br>за 7 вопросов</p>
+      <p class="intro-copy">Мы подберем ваш<br><span>персональный аромат</span><br>за 8 вопросов</p>
       <div class="intro-spark" aria-hidden="true"></div>
 
       <div class="bottom-actions">
@@ -291,7 +325,8 @@ function renderProfile() {
     return;
   }
 
-  const { profile, items, totalItems } = state.recommendations;
+  const { profile, totalItems } = state.recommendations;
+  const heroImage = getProfileHeroImage(profile.name);
 
   phone(`
     <section class="screen profile-screen screen-with-footer">
@@ -299,7 +334,13 @@ function renderProfile() {
         <span class="brand">Aroma Type<span class="spark">✦</span></span>
       </div>
 
-      <div class="profile-hero-image" aria-hidden="true">
+      <div class="profile-hero-image">
+        <img
+          class="profile-hero-photo"
+          src="${escapeAttr(heroImage)}"
+          alt="${escapeAttr(profile.name)}"
+          loading="lazy"
+        />
         <span class="eyebrow profile-eyebrow">Парфюмерный тип</span>
       </div>
 
@@ -341,9 +382,11 @@ function renderResults() {
   phone(`
     <section class="screen podbor-screen screen-with-footer">
       <div class="brand-row podbor-header">
-        <button class="top-back" data-action="back-profile" type="button" aria-label="Назад">‹</button>
-        <span class="brand">Aroma Type<span class="spark">✦</span></span>
-        <div class="step-label">${totalItems}<br>${pluralize(totalItems, ["вариант", "варианта", "вариантов"]).replace(/^\d+\s/, "")}</div>
+  <button class="top-back" data-action="back-profile" type="button" aria-label="Назад">‹</button>
+  <span class="brand">Aroma Type<span class="spark">✦</span></span>
+  <button class="top-cart" data-action="order-set" type="button" aria-label="Корзина">
+    <img src="./assets/shopping-bag.png" alt="" class="top-cart-icon" />
+  </button>
       </div>
       <div class="hairline"></div>
 
@@ -357,19 +400,21 @@ function renderResults() {
       </div>
 
       <div class="card-list">
-        ${visibleItems.length ? visibleItems.map(renderRecommendationCard).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
+        ${visibleItems.length ? visibleItems.map((item, index) => renderRecommendationCard(item, index)).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
       </div>
 
       <div class="bottom-actions">
         <p class="small-copy" style="text-align: center; margin-bottom: 12px;">Набор из 5 миниатюр · Доставка включена</p>
-        <button class="btn" data-action="order-set" type="button">Заказать сет пробников</button>
+        <button class="btn" data-action="order-set" type="button">В корзину</button>
         <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
       </div>
     </section>
   `);
 }
 
-function renderRecommendationCard(item) {
+function renderRecommendationCard(item, index = 0) {
+  const cardNumber = String(index + 1).padStart(2, "0");
+
   return `
     <article class="fragrance-card" data-action="open-product" data-product-id="${escapeAttr(item.id)}">
       ${renderImage(item.imageUrl, item.name, "product-image")}
@@ -386,6 +431,16 @@ function renderRecommendationCard(item) {
           <span>${safePercent(item.matchPercent)}%</span>
         </div>
       </div>
+
+      <button
+        class="card-add-btn"
+        data-action="add-to-cart"
+        data-product-id="${escapeAttr(item.id)}"
+        type="button"
+        aria-label="Добавить в корзину"
+      >+</button>
+
+      <span class="card-number">${cardNumber}</span>
     </article>
   `;
 }
@@ -467,98 +522,6 @@ function renderProductLoaded() {
   `);
 }
 
-function renderAdmin() {
-  const isAdmin = state.user && state.user.role === "admin";
-
-  phone(`
-    <section class="screen admin-screen">
-      <div class="brand-row">
-        <button class="top-back" data-action="${state.token ? "go-home" : "auth-back"}" type="button" aria-label="Назад">‹</button>
-        <span class="brand">Aroma Type<span class="spark">✦</span></span>
-      </div>
-
-      <h1 class="admin-title">Добавить продукт</h1>
-
-      ${isAdmin ? renderAdminForm() : renderAdminLogin()}
-    </section>
-  `);
-}
-
-function renderAdminLogin() {
-  return `
-    <form class="form" data-form="admin-login">
-      <label class="field">
-        <span>Email</span>
-        <input class="input" name="email" type="email" value="admin@aromatype.local" required />
-      </label>
-      <label class="field">
-        <span>Пароль</span>
-        <input class="input" name="password" type="password" placeholder="Пароль администратора" required />
-      </label>
-      <button class="btn" type="submit">Войти как админ</button>
-    </form>
-  `;
-}
-
-function renderAdminForm() {
-  return `
-    <form class="admin-grid" data-form="create-fragrance">
-      <label class="field">
-        <span>Название</span>
-        <input class="input" name="name" placeholder="Введите название товара" required />
-      </label>
-      <label class="field">
-        <span>Бренд</span>
-        <input class="input" name="brand" placeholder="Например, Juliette Has A Gun" required />
-      </label>
-      <div class="two-col">
-        <label class="field">
-          <span>Стоимость</span>
-          <input class="input" name="price" inputmode="decimal" placeholder="8393" required />
-        </label>
-        <label class="field">
-          <span>Объемы</span>
-          <input class="input" name="volumes" placeholder="50:8393, 100:12990" required />
-        </label>
-      </div>
-      <label class="field">
-        <span>Фото</span>
-        <input class="input" name="photo" type="file" accept="image/jpeg,image/png,image/webp" />
-        <input name="imageUrl" type="hidden" />
-        <img id="admin-photo-preview" class="upload-preview hidden" alt="" />
-      </label>
-      <label class="field">
-        <span>Основные аккорды</span>
-        <input class="input" name="mainAccords" placeholder="сладкий, ванильный, фруктовый" required />
-      </label>
-      <label class="field">
-        <span>Верхние ноты</span>
-        <input class="input" name="topNotes" placeholder="клубника, бергамот" />
-      </label>
-      <label class="field">
-        <span>Средние ноты</span>
-        <input class="input" name="middleNotes" placeholder="мороженое, жасмин" />
-      </label>
-      <label class="field">
-        <span>Базовые ноты</span>
-        <input class="input" name="baseNotes" placeholder="ваниль, мускус" />
-      </label>
-      <label class="field">
-        <span>Описание</span>
-        <textarea class="textarea" name="description" placeholder="Введите описание" required></textarea>
-      </label>
-      <label class="field">
-        <span>Теги для подбора</span>
-        <input class="input" name="tagIds" list="tag-suggestions" placeholder="fresh, clean, daily" />
-        <datalist id="tag-suggestions">
-          ${DEFAULT_TAG_IDS.map((tag) => `<option value="${tag}"></option>`).join("")}
-        </datalist>
-      </label>
-      <button class="btn" type="submit">Сохранить товар</button>
-    </form>
-  `;
-}
-
 function renderState(title, message, action) {
   phone(`
     <section class="screen">
@@ -622,12 +585,14 @@ function highlightQuestion(text) {
   const escaped = escapeHTML(text);
   const replacements = [
     ["через аромат", "<span>через аромат</span>"],
-    ["жизненных моментах", "<span>жизненных моментах</span>"],
-    ["ощущать аромат", "<span>ощущать аромат</span>"],
-    ["какой след", "<span>какой след</span>"],
-    ["какая погода", "<span>какая погода</span>"],
-    ["какой стиль", "<span>какой стиль</span>"],
-    ["ограничения", "<span>ограничения</span>"],
+    ["незнакомую компанию", "<span>незнакомую компанию</span>"],
+    ["максимальный прилив энергии", "<span>максимальный прилив энергии</span>"],
+    ["форс-мажора", "<span>форс-мажора</span>"],
+    ["транслировать окружающим", "<span>транслировать окружающим</span>"],
+    ["сложный новый проект", "<span>сложный новый проект</span>"],
+    ["означает «качество»", "<span>означает «качество»</span>"],
+    ["уже через 15 минут", "<span>уже через 15 минут</span>"],
+    ["наибольший отклик", "<span>наибольший отклик</span>"],
   ];
 
   return replacements.reduce((result, [source, target]) => result.replace(source, target), escaped);
@@ -645,106 +610,6 @@ async function handleSubmit(event) {
   const form = event.target.closest("form");
   if (!form) return;
   event.preventDefault();
-
-  const formType = form.dataset.form;
-  if (formType === "auth") {
-    await submitAuth(form);
-  }
-  if (formType === "admin-login") {
-    await submitAdminLogin(form);
-  }
-  if (formType === "create-fragrance") {
-    await submitCreateFragrance(form);
-  }
-}
-
-async function submitAuth(form) {
-  const data = new FormData(form);
-  const path = state.authMode === "login" ? "/api/auth/login" : "/api/auth/register";
-
-  try {
-    const result = await api(path, {
-      method: "POST",
-      body: {
-        email: data.get("email"),
-        password: data.get("password"),
-      },
-    });
-    setAuth(result);
-    showToast(state.authMode === "login" ? "Вы вошли" : "Аккаунт создан");
-    navigate("home");
-  } catch (error) {
-    showToast(error.message);
-  }
-}
-
-async function submitAdminLogin(form) {
-  const data = new FormData(form);
-
-  try {
-    const result = await api("/api/auth/login", {
-      method: "POST",
-      body: {
-        email: data.get("email"),
-        password: data.get("password"),
-      },
-    });
-    setAuth(result);
-    if (result.user.role !== "admin") {
-      showToast("У этого аккаунта нет прав администратора");
-      return;
-    }
-    renderAdmin();
-  } catch (error) {
-    showToast(error.message);
-  }
-}
-
-async function submitCreateFragrance(form) {
-  const data = new FormData(form);
-  let imageUrl = data.get("imageUrl") || "";
-  const photo = data.get("photo");
-
-  try {
-    if (photo && photo.size > 0) {
-      const upload = new FormData();
-      upload.append("photo", photo);
-      const uploaded = await api("/api/admin/uploads/fragrance-photo", {
-        method: "POST",
-        formData: upload,
-        auth: true,
-      });
-      imageUrl = uploaded.imageUrl;
-    }
-
-    const payload = {
-      name: data.get("name"),
-      brand: data.get("brand"),
-      imageUrl,
-      price: numberValue(data.get("price")),
-      volumeOptions: parseVolumeOptions(data.get("volumes")),
-      description: data.get("description"),
-      topNotes: splitList(data.get("topNotes")),
-      middleNotes: splitList(data.get("middleNotes")),
-      baseNotes: splitList(data.get("baseNotes")),
-      mainAccords: splitList(data.get("mainAccords")),
-      tagIds: splitList(data.get("tagIds")),
-      isActive: true,
-    };
-
-    const product = await api("/api/admin/fragrances", {
-      method: "POST",
-      body: payload,
-      auth: true,
-    });
-
-    showToast("Товар сохранён");
-    form.reset();
-    state.selectedProduct = product;
-    navigate(`product/${product.id}`);
-  } catch (error) {
-    showToast(error.message);
-  }
 }
 
 function handleClick(event) {
@@ -753,22 +618,8 @@ function handleClick(event) {
 
   const action = target.dataset.action;
 
-  if (action === "auth-mode") {
-    state.authMode = target.dataset.mode;
-    renderAuth();
-  }
   if (action === "api-settings") {
     openApiSettings();
-  }
-  if (action === "open-admin") {
-    navigate("admin");
-  }
-  if (action === "auth-back") {
-    navigate("auth");
-  }
-  if (action === "logout") {
-    clearAuth();
-    navigate("auth");
   }
   if (action === "start-intro") {
     navigate("intro");
@@ -810,6 +661,10 @@ function handleClick(event) {
   if (action === "open-product") {
     navigate(`product/${target.dataset.productId}`);
   }
+  if (action === "add-to-cart") {
+    state.cartItems.add(target.dataset.productId);
+    showToast("Аромат добавлен в корзину");
+  }
   if (action === "back-results") {
     navigate("results");
   }
@@ -823,14 +678,7 @@ function handleClick(event) {
 }
 
 function handleChange(event) {
-  const input = event.target;
-  if (input.name !== "photo" || !input.files || !input.files[0]) return;
-
-  const preview = document.getElementById("admin-photo-preview");
-  if (!preview) return;
-
-  preview.src = URL.createObjectURL(input.files[0]);
-  preview.classList.remove("hidden");
+  void event;
 }
 
 function selectAnswer(target) {
@@ -918,10 +766,6 @@ async function api(path, options = {}) {
     headers,
   };
 
-  if (options.auth) {
-    headers.set("Authorization", `Bearer ${state.token}`);
-  }
-
   if (options.formData) {
     request.body = options.formData;
   } else if (options.body !== undefined) {
@@ -943,23 +787,6 @@ async function api(path, options = {}) {
   }
 
   return payload;
-}
-
-function splitList(value) {
-  return String(value || "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function parseVolumeOptions(value) {
-  return splitList(value).map((item) => {
-    const [volume, price] = item.split(":").map((part) => part.trim());
-    return {
-      volumeMl: parseInt(volume, 10),
-      price: numberValue(price),
-    };
-  }).filter((item) => item.volumeMl > 0 && item.price >= 0);
 }
 
 function numberValue(value) {
