@@ -703,8 +703,10 @@ button {
   background: var(--olive);
 }
 
-.profile-bar:first-child .profile-bar-fill {
-  background: var(--pink);
+
+.profile-bar:first-child .profile-bar-fill,
+.profile-bar:nth-child(1) .profile-bar-fill {
+  background: var(--green, #78835f) !important;
 }
 
 .profile-bar-label {
