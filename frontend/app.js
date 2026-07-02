@@ -374,10 +374,7 @@ function renderResults() {
   }
 
   const { profile, items, totalItems } = state.recommendations;
-  const filters = unique(["all", ...items.flatMap((item) => item.mainAccords || [])]).slice(0, 4);
-  const visibleItems = state.activeFilter === "all"
-    ? items
-    : items.filter((item) => (item.mainAccords || []).includes(state.activeFilter));
+const visibleItems = items;
 
   phone(`
     <section class="screen podbor-screen screen-with-footer">
@@ -395,9 +392,8 @@ function renderResults() {
       <p class="podbor-copy">Каждый аромат выбран под ваш тип — чистый, лёгкий, сдержанный.</p>
       <div class="divider"></div>
 
-      <div class="filters">
-        ${filters.map((filter) => `<button class="chip ${state.activeFilter === filter ? "active" : ""}" data-action="filter" data-filter="${escapeAttr(filter)}" type="button">${filter === "all" ? "Все" : escapeHTML(capitalize(filter))}</button>`).join("")}
-      </div>
+    <div class="divider"></div>
+
 
       <div class="card-list">
         ${visibleItems.length ? visibleItems.map((item, index) => renderRecommendationCard(item, index)).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
@@ -654,10 +650,7 @@ function handleClick(event) {
   if (action === "go-home") {
     navigate("home");
   }
-  if (action === "filter") {
-    state.activeFilter = target.dataset.filter;
-    renderResults();
-  }
+  
   if (action === "open-product") {
     navigate(`product/${target.dataset.productId}`);
   }
