@@ -115,6 +115,78 @@ function injectProfileHeroStyles() {
   document.head.appendChild(style);
 }
 
+function injectCartStyles() {
+  if (document.getElementById("cart-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "cart-styles";
+  style.textContent = `
+    .cart-screen {
+      overflow-y: auto;
+      padding-bottom: 32px;
+    }
+
+    .cart-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 22px;
+      margin-bottom: 26px;
+      padding-bottom: 10px;
+    }
+
+    .cart-item {
+      align-items: center;
+    }
+
+    .cart-controls {
+      display: grid;
+      gap: 9px;
+      justify-items: center;
+    }
+
+    .cart-qty {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      min-height: 40px;
+      border: 0;
+      border-radius: 50%;
+      background: #4c2f22;
+      color: #fff;
+      font-size: 25px;
+      line-height: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .cart-checkout {
+      margin-top: 28px;
+      padding: 18px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 -8px 24px rgba(76, 47, 34, 0.12);
+      position: sticky;
+      bottom: 0;
+      z-index: 5;
+    }
+
+    .card-plus {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      min-height: 42px;
+      font-size: 28px;
+      line-height: 42px;
+      display: grid;
+      place-items: center;
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
 const state = {
   apiBase: resolveApiBase(),
   questions: [],
@@ -131,6 +203,7 @@ const app = document.getElementById("app");
 const toast = document.getElementById("toast");
 
 injectProfileHeroStyles();
+injectCartStyles();
 initTelegram();
 window.addEventListener("hashchange", render);
 document.addEventListener("submit", handleSubmit);
@@ -404,7 +477,6 @@ function renderResults() {
       </div>
 
       <div class="bottom-actions">
-        <p class="small-copy" style="text-align: center; margin-bottom: 12px;">Набор из 5 миниатюр · Доставка включена</p>
         <button class="btn" data-action="order-set" type="button">В корзину</button>
         <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
       </div>
