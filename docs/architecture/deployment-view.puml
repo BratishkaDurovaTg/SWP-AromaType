@@ -1,0 +1,40 @@
+@startuml
+title AromaType Deployment View
+
+skinparam shadowing false
+
+node "Developer machine / VPS host" as Host {
+  node "Docker Compose project" as Compose {
+    container "caddy:2-alpine\nreverse proxy + static frontend" as Caddy
+    container "aromatype-backend\nGo API" as Backend
+    container "aromatype-catalogbot\nGo Telegram bot\nprofile: catalogbot" as Bot
+    database "postgres:16-alpine" as Postgres
+    folder "uploads_data volume" as Uploads
+    folder "postgres_data volume" as PgData
+  }
+}
+
+cloud "Telegram" as Telegram
+cloud "Browser / Telegram WebView" as WebView
+cloud "GitHub Actions" as GHA
+
+WebView --> Caddy : HTTPS / static frontend
+Caddy --> Backend : /api, /health, /docs, /openapi.yaml, /uploads
+Backend --> Postgres : DATABASE_URL
+Backend --> Uploads : uploaded files
+Postgres --> PgData : persistent data
+
+Telegram --> Bot : Bot API updates
+Bot --> Postgres : catalog reads/writes
+Bot --> Uploads : product photos
+
+GHA --> Backend : docker build
+GHA --> Backend : go test, go vet, govulncheck
+GHA --> Caddy : deployment artifact source
+
+note right of Host
+The previous public VPS deployment was removed on 2026-07-03.
+This view documents the supported Docker topology for future deployment.
+end note
+
+@enduml

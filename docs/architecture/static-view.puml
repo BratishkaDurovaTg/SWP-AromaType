@@ -1,0 +1,54 @@
+@startuml
+title AromaType Static Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "User" as User
+actor "Catalog Admin" as Admin
+
+package "Frontend" {
+  component "Telegram Mini App\nHTML/CSS/JS" as Frontend
+  component "Frontend Tests\nVitest + jsdom" as FrontendTests
+}
+
+package "Backend (Go)" {
+  component "cmd/api" as ApiMain
+  component "HTTP Router\ninternal/http" as Router
+  component "Questionnaire Service\ninternal/questionnaire" as Service
+  component "Questionnaire Repository\ninternal/questionnaire" as QRepo
+  component "Catalog Repository\ninternal/catalog" as CRepo
+  component "cmd/catalogbot" as BotMain
+  component "Catalog Bot\ninternal/catalogbot" as CatalogBot
+  component "Config\ninternal/config" as Config
+  component "Database Migration\ninternal/database" as Database
+}
+
+database "PostgreSQL" as Postgres
+folder "Uploads Volume" as Uploads
+artifact "OpenAPI YAML" as OpenAPI
+
+User --> Frontend
+Frontend --> Router : HTTP JSON
+FrontendTests --> Frontend
+
+ApiMain --> Config
+ApiMain --> Database
+ApiMain --> Router
+ApiMain --> Service
+Service --> QRepo
+QRepo --> Postgres
+Router --> Service
+Router --> Uploads : serve /uploads
+Router --> OpenAPI : serve /openapi.yaml
+
+Admin --> CatalogBot : Telegram messages
+BotMain --> Config
+BotMain --> Database
+BotMain --> CatalogBot
+CatalogBot --> CRepo
+CatalogBot --> Uploads : save photos
+CRepo --> Postgres
+Database --> Postgres : migrations + seed data
+
+@enduml
