@@ -236,7 +236,8 @@ The Definition of Done, automated tests, quality requirement tests, and CI check
 
 ## Public Demo Video
 
-Public demo video is available in the shared project demo folder.
+[Video](https://drive.google.com/drive/folders/1r7azvxorwS8k0GFgO_8EMJ6djupHUXg2?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto)
+
 ---
 
 # Customer Review
