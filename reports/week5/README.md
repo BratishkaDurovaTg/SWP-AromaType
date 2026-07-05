@@ -205,7 +205,7 @@ Backend, frontend, and integration testing are executed through the project's Gi
 
 ## SemVer Release (MVP v2)
 
-[Release Link](https://github.com/BratishkaDurovaTg/SWP-AromaType/releases/tag/v1.1.0)
+[Release Link](https://github.com/BratishkaDurovaTg/SWP-AromaType/releases/tag/v1.2.0)
 
 ---
 
