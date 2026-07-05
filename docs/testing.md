@@ -1,69 +1,100 @@
 # Testing
 
-This document is the canonical testing status artifact for AromaType. Assignment 4 checks introduced here are maintained product assets and should stay active unless replaced by documented equivalent or stronger checks.
+This document is the maintained testing status artifact for AromaType. It
+records automated checks, quality requirement tests, and current known gaps for
+the MVP v2 baseline.
 
-## Critical Modules and Coverage
+## Automated Backend Checks
 
-Coverage was measured locally with:
+Backend checks are implemented in `.github/workflows/backend.yml` and run on
+pull requests and pushes to `main` and `dev`.
+
+| Check | Command | Purpose | Latest local result |
+|---|---|---|---|
+| Formatting | `test -z "$(gofmt -l .)"` | Prevent unformatted Go code. | Not rerun separately; included in CI. |
+| Static analysis | `go vet ./...` | Catch common Go correctness issues. | Not rerun separately; included in CI. |
+| Unit and integration tests | `go test -race -covermode=atomic -coverprofile=coverage.out ./...` | Validate recommendation logic, router behavior, upload helpers, and catalog parser helpers. | Passed on 2026-07-03. |
+| Coverage report | `go tool cover -func=coverage.out` | Measure critical module coverage. | Passed on 2026-07-03. |
+
+Latest local coverage evidence from 2026-07-03:
+
+| Package | Coverage | Notes |
+|---|---:|---|
+| Total backend | 36.3% | Above the maintained 30% backend coverage threshold. |
+| `backend/internal/questionnaire` | 53.8% | Critical recommendation and fragrance validation module. |
+| `backend/internal/http` | 52.5% | Critical public API routing module. |
+| `backend/internal/catalogbot` | 29.5% | Parser, validation, formatting, and keyboard helpers are covered; interactive Telegram flow still needs broader tests. |
+
+## Automated Frontend Checks
+
+Frontend tests are configured in `.github/workflows/frontend-tests.yml` and use
+Vitest with jsdom. They cover the start screen, intro transition, public API
+integration with mocked `fetch`, result rendering, profile image rendering,
+recommendation card numbering, and cart button rendering.
+
+Local note from 2026-07-03: `npm test` did not run on this machine because
+frontend dev dependencies were not installed (`vitest: command not found`).
+The local command sequence is:
 
 ```bash
-cd backend
-go test -coverprofile=coverage.out ./...
-go tool cover -func=coverage.out
+cd frontend
+npm install
+npm test
 ```
 
-| Critical module | Why critical | Required line coverage | Current line coverage | Evidence |
-|---|---|---:|---:|---|
-| `backend/internal/questionnaire` | Core questionnaire matching, psychotype scoring, profile building, fragrance creation validation. | 30% | Measured by CI | `backend/internal/questionnaire/service_test.go`; backend CI coverage artifact |
-| `backend/internal/http` | Public API routes, CORS, and upload validation helpers. | 30% | Measured by CI | `backend/internal/http/router_test.go`; `backend/internal/http/uploads_test.go`; backend CI coverage artifact |
+## Other CI and QA Gates
 
-Global backend coverage is measured by CI. It is lower than the tested service functions because database migration and repository code still depends on a live PostgreSQL environment and will be covered by stronger database integration tests in a later iteration.
+| Workflow | Check | Purpose |
+|---|---|---|
+| `.github/workflows/docker-build.yml` | `docker build -f backend/Dockerfile -t aromatype-backend:ci .` | Confirms the backend Docker image can be built. |
+| `.github/workflows/lychee.yml` | Lychee Markdown link check | Prevents broken links in repository Markdown files. |
+| `.github/workflows/qa.yml` | `govulncheck ./...` | Detects reachable Go vulnerabilities in dependencies and standard library usage. |
+| `.github/workflows/deploy-backend.yml` | Manual `workflow_dispatch` deploy | Deploys from `main` to a configured VPS when hosting is enabled. |
 
-## Automated Test Status
+## Quality Requirement Test Matrix
 
-| Test type | Scope | Command or CI check | Latest result | Evidence |
-|---|---|---|---|---|
-| Unit tests | Recommendation ranking, psychotype scoring, max 5 recommendations, profile building, fragrance creation validation, upload content type mapping. | `go test ./...` | Passing locally | Test files under `backend/internal/**` |
-| Integration tests | HTTP router with real questionnaire service and fake repositories for health, questions, recommendations, and removed auth endpoint behavior. | `go test ./...` | Passing locally | `backend/internal/http/router_test.go` |
-| Automated QRTs | QR-001, QR-002, QR-003. | Backend workflow `test` job | Passing locally; CI runs on PRs and `main`/`dev` pushes | [quality-requirement-tests.md](quality-requirement-tests.md) |
+| QRT | Requirement | Automated evidence |
+|---|---|---|
+| [QRT-001](quality-requirement-tests.md#qrt-001-critical-module-coverage) | [QR-001](quality-requirements.md#qr-001-critical-module-testability) | Backend coverage run and artifact. |
+| [QRT-002](quality-requirement-tests.md#qrt-002-recommendation-set-size) | [QR-002](quality-requirements.md#qr-002-recommendation-set-size) | `TestRecommendReturnsAtMostFiveItems`. |
+| [QRT-003](quality-requirement-tests.md#qrt-003-recommendation-determinism) | [QR-003](quality-requirements.md#qr-003-recommendation-determinism) | `TestRecommendRanksFragrancesAndBuildsProfile`. |
+| [QRT-004](quality-requirement-tests.md#qrt-004-catalog-data-integrity) | [QR-004](quality-requirements.md#qr-004-catalog-data-integrity) | `backend/internal/catalogbot/parse_test.go`. |
+| [QRT-005](quality-requirement-tests.md#qrt-005-public-api-contract-stability) | [QR-005](quality-requirements.md#qr-005-public-api-contract-stability) | `backend/internal/http/router_test.go`. |
 
-## CI and QA Check Status
+## Manual Smoke Checks
 
-| Gate or check | Required for Done? | Latest protected-branch status | Evidence |
-|---|---|---|---|
-| Formatting | Yes | Runs on PRs and `main`/`dev` pushes | Backend workflow, `gofmt -l .` |
-| Static analysis | Yes | Runs on PRs and `main`/`dev` pushes | Backend workflow, `go vet ./...` |
-| Unit and integration tests | Yes | Runs on PRs and `main`/`dev` pushes | Backend workflow, `go test -race -covermode=atomic -coverprofile=coverage.out ./...` |
-| Coverage reporting | Yes | Runs on PRs and `main`/`dev` pushes | Backend workflow coverage output and `backend-coverage` artifact |
-| Docker build | Yes | Runs on PRs and `main`/`dev` pushes | Docker Build workflow |
-| Link checking | Yes | Runs on PRs and `main`/`dev` pushes | Lychee workflow |
-| Additional QA check | Yes | Runs on PRs and `main`/`dev` pushes | Additional QA workflow, `govulncheck ./...` |
+Manual smoke checks are useful during demos but do not count as QRT evidence
+until automated:
 
-## Additional QA Check Rationale
+| Flow | Manual check |
+|---|---|
+| Mini App start | Open the frontend and verify the main screen loads. |
+| Questionnaire | Complete all question steps and submit answers. |
+| Results | Verify profile, recommendation list, and product cards render. |
+| Product card | Open a fragrance, verify notes, accords, volume options, and image. |
+| Catalog bot | Log in with the bot password, list products, edit a field, upload a photo, and verify product data through the public API. |
 
-| QA objective or risk | Additional QA check | Scope | Latest result | Evidence | Limitations or follow-up |
-|---|---|---|---|---|---|
-| A vulnerable Go dependency or reachable standard-library vulnerability could expose product data, public API behavior, or deployment integrity. | Automated dependency vulnerability scan with `govulncheck`. | Go module dependencies and reachable backend code. | Passing locally; runs on PRs and `main`/`dev` pushes. | Additional QA workflow | It does not replace code review, secret scanning, or infrastructure hardening. Vulnerabilities may still require manual triage when upstream fixes are delayed. |
+## Known Testing Gaps
 
-The team considered dependency vulnerability scanning, API contract checks, performance smoke tests, accessibility checks, and dependency freshness checks. `govulncheck` was selected first because the current backend exposes the public recommendation API and Go provides a reliable stack-native vulnerability scanner.
+- PostgreSQL repository and migration behavior are not covered by a real
+  database integration test yet.
+- Catalog bot conversation state, Telegram update handling, and photo download
+  behavior need higher-level tests with a fake Telegram client.
+- Frontend tests require installed npm dev dependencies locally.
+- Hosted deployment smoke tests are currently disabled because the previous VPS
+  deployment and DNS records were removed on 2026-07-03.
 
-## Manual Evidence That Does Not Count as QRT
+## Maintained Gates
 
-| Evidence | Scope | Result | Follow-up PBI or issue |
-|---|---|---|---|
-| Customer and team UI review | Questionnaire, profile, recommendation, and product screens. | Used as product feedback, not automated QRT evidence. | Track follow-up changes in GitHub Issues. |
-| Swagger/manual API checks | Health, questionnaire, recommendation, and fragrance endpoints. | Useful smoke evidence while developing, not QRT unless automated. | Replace important manual checks with automated tests when a workflow becomes stable. |
+The following checks must remain active or be replaced by equivalent stronger
+checks:
 
-## Maintained Gates After Assignment 4
-
-The following gates remain active for later product work:
-
-- Backend formatting check with `gofmt`.
-- Backend static analysis with `go vet`.
+- Go formatting.
+- Go static analysis.
 - Backend unit and integration tests with race detector.
-- Backend coverage reporting and critical-module coverage expectation of at least 30%.
+- Critical backend module coverage at or above 30%.
 - Docker backend image build.
-- Lychee Markdown link checking.
-- Additional QA dependency vulnerability scan with `govulncheck`.
-
-Any future replacement must be documented here and must provide equivalent or stronger coverage of the same risk.
+- Lychee Markdown link check.
+- Go vulnerability scan with `govulncheck`.
+- Frontend Vitest/jsdom tests once dependencies are installed in the test
+  environment.
