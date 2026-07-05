@@ -374,7 +374,10 @@ function renderResults() {
   }
 
   const { profile, items, totalItems } = state.recommendations;
-const visibleItems = items;
+  const filters = unique(["all", ...items.flatMap((item) => item.mainAccords || [])]).slice(0, 4);
+  const visibleItems = state.activeFilter === "all"
+    ? items
+    : items.filter((item) => (item.mainAccords || []).includes(state.activeFilter));
 
   phone(`
     <section class="screen podbor-screen screen-with-footer">
@@ -392,13 +395,16 @@ const visibleItems = items;
       <p class="podbor-copy">Каждый аромат выбран под ваш тип — чистый, лёгкий, сдержанный.</p>
       <div class="divider"></div>
 
-    <div class="divider"></div>
-
+      <div class="filters">
+        ${filters.map((filter) => `<button class="chip ${state.activeFilter === filter ? "active" : ""}" data-action="filter" data-filter="${escapeAttr(filter)}" type="button">${filter === "all" ? "Все" : escapeHTML(capitalize(filter))}</button>`).join("")}
+      </div>
 
       <div class="card-list">
         ${visibleItems.length ? visibleItems.map((item, index) => renderRecommendationCard(item, index)).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
       </div>
+
       <div class="bottom-actions">
+        <p class="small-copy" style="text-align: center; margin-bottom: 12px;">Набор из 5 миниатюр · Доставка включена</p>
         <button class="btn" data-action="order-set" type="button">В корзину</button>
         <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
       </div>
@@ -648,7 +654,10 @@ function handleClick(event) {
   if (action === "go-home") {
     navigate("home");
   }
-  
+  if (action === "filter") {
+    state.activeFilter = target.dataset.filter;
+    renderResults();
+  }
   if (action === "open-product") {
     navigate(`product/${target.dataset.productId}`);
   }
