@@ -1,0 +1,45 @@
+@startuml
+title AromaType Dynamic View - Recommendation Flow
+
+skinparam shadowing false
+
+actor User
+participant "Mini App Frontend" as Frontend
+participant "Go HTTP API" as API
+participant "Questionnaire Service" as Service
+database "PostgreSQL" as DB
+
+User -> Frontend : Start selection
+Frontend -> API : GET /api/questions
+API -> Service : GetQuestions()
+Service -> DB : Load active questions and options
+DB --> Service : Questions
+Service --> API : Questions
+API --> Frontend : JSON questions
+
+loop 8 questionnaire steps
+  User -> Frontend : Select answer option
+end
+
+Frontend -> API : POST /api/recommendations\nanswerOptionIds[]
+API -> Service : Recommend(answerOptionIds)
+Service -> DB : Load answer option tag weights
+Service -> DB : Load tag names
+Service -> DB : Load active fragrances and fragrance tags
+Service -> Service : Build user psychotype scores
+Service -> Service : Score fragrance tag and psychotype matches
+Service -> Service : Sort deterministically and limit to 5
+Service --> API : Profile + recommendation items
+API --> Frontend : JSON recommendation response
+Frontend --> User : Profile, product list, product cards
+
+User -> Frontend : Open fragrance card
+Frontend -> API : GET /api/fragrances/{id}
+API -> Service : GetFragrance(id)
+Service -> DB : Load fragrance details
+DB --> Service : Fragrance
+Service --> API : Fragrance
+API --> Frontend : JSON fragrance details
+Frontend --> User : Notes, accords, volume options
+
+@enduml

@@ -15,6 +15,8 @@ docs/      API contract, database schema notes, product docs
 
 - [Database schema](docs/db-schema.md)
 - [API contract](docs/api/openapi.yaml)
+- [Development process](docs/development-process.md)
+- [Architecture](docs/architecture/README.md)
 - [Testing and QA status](docs/testing.md)
 - [Quality requirements](docs/quality-requirements.md)
 - [User acceptance tests](docs/user-acceptance-tests.md)
