@@ -473,7 +473,9 @@ async function renderProduct(productId) {
 
 function renderProductLoaded() {
   const product = state.selectedProduct;
-  const volume = selectedProductVolume();
+  const volumeOptions = product.volumeOptions || [];
+  const volume = volumeOptions[state.selectedVolumeIndex];
+  const selectedVolumeMl = volume ? volume.volumeMl : 50;
   const price = volume ? formatPrice(volume.price) : formatPrice(product.price);
 
   phone(`
