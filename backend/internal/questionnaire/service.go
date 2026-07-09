@@ -22,6 +22,9 @@ const (
 	PsychotypeAesthetic = "aesthetic"
 	PsychotypePower     = "power"
 	PsychotypeBalanced  = "balanced"
+	GenderMale          = "male"
+	GenderFemale        = "female"
+	GenderUnisex        = "unisex"
 	MaxRecommendedItems = 5
 )
 
@@ -87,6 +90,7 @@ func (s *Service) Recommend(ctx context.Context, answerOptionIDs []string) (Reco
 					ID:               row.ID,
 					Name:             row.Name,
 					Brand:            row.Brand,
+					Gender:           normalizeGender(row.Gender),
 					ImageURL:         row.ImageURL,
 					Price:            row.Price,
 					Psychotype:       psychotype,
@@ -160,16 +164,23 @@ func (s *Service) GetFragrance(ctx context.Context, id string) (Fragrance, error
 func (s *Service) CreateFragrance(ctx context.Context, payload CreateFragranceRequest) (Fragrance, error) {
 	payload.Name = strings.TrimSpace(payload.Name)
 	payload.Brand = strings.TrimSpace(payload.Brand)
+	payload.Gender = normalizeGender(payload.Gender)
 	payload.ImageURL = strings.TrimSpace(payload.ImageURL)
 	payload.Description = strings.TrimSpace(payload.Description)
 	payload.VolumeOptions = cleanVolumeOptions(payload.VolumeOptions)
+	if price, ok := priceForVolume(payload.VolumeOptions, 3); ok {
+		payload.Price = price
+	}
 	payload.Psychotype = normalizePsychotype(payload.Psychotype)
 	payload.PsychotypeScores = normalizePsychotypeScores(payload.Psychotype, payload.PsychotypeScores)
 
 	if payload.Name == "" ||
 		payload.Brand == "" ||
 		payload.Price < 0 ||
-		!isKnownPsychotype(payload.Psychotype) {
+		!isKnownGender(payload.Gender) ||
+		!isKnownPsychotype(payload.Psychotype) ||
+		!hasRequiredVolumeOptions(payload.VolumeOptions) ||
+		!hasValidPsychotypeScores(payload.PsychotypeScores) {
 		return Fragrance{}, ErrInvalidFragrance
 	}
 
@@ -182,6 +193,7 @@ func (s *Service) CreateFragrance(ctx context.Context, payload CreateFragranceRe
 		ID:               uuid.NewString(),
 		Name:             payload.Name,
 		Brand:            payload.Brand,
+		Gender:           payload.Gender,
 		ImageURL:         payload.ImageURL,
 		Price:            strconv.FormatFloat(payload.Price, 'f', -1, 64),
 		VolumeOptions:    payload.VolumeOptions,
@@ -235,6 +247,20 @@ func normalizePsychotype(value string) string {
 	return value
 }
 
+func normalizeGender(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	switch value {
+	case GenderMale, "m", "man", "men", "м", "муж", "мужской":
+		return GenderMale
+	case GenderFemale, "f", "woman", "women", "ж", "жен", "женский":
+		return GenderFemale
+	case GenderUnisex, "u", "унисекс", "universal", "универсальный", "":
+		return GenderUnisex
+	default:
+		return value
+	}
+}
+
 func normalizePsychotypeScores(psychotype string, scores PsychotypeScores) PsychotypeScores {
 	scores = PsychotypeScores{
 		Drive:     clampScore(scores.Drive),
@@ -256,9 +282,18 @@ func normalizePsychotypeScores(psychotype string, scores PsychotypeScores) Psych
 	case PsychotypePower:
 		scores.Power = 100
 	default:
-		scores = PsychotypeScores{Drive: 50, Focus: 50, Aesthetic: 50, Power: 50}
+		scores = PsychotypeScores{Drive: 25, Focus: 25, Aesthetic: 25, Power: 25}
 	}
 	return scores
+}
+
+func isKnownGender(value string) bool {
+	switch value {
+	case GenderMale, GenderFemale, GenderUnisex:
+		return true
+	default:
+		return false
+	}
 }
 
 func isKnownPsychotype(value string) bool {
@@ -268,6 +303,18 @@ func isKnownPsychotype(value string) bool {
 	default:
 		return false
 	}
+}
+
+func hasValidPsychotypeScores(scores PsychotypeScores) bool {
+	return scores.Drive >= 0 &&
+		scores.Focus >= 0 &&
+		scores.Aesthetic >= 0 &&
+		scores.Power >= 0 &&
+		scores.Drive <= 100 &&
+		scores.Focus <= 100 &&
+		scores.Aesthetic <= 100 &&
+		scores.Power <= 100 &&
+		scores.Drive+scores.Focus+scores.Aesthetic+scores.Power == 100
 }
 
 func psychotypeLabel(value string) string {
@@ -420,7 +467,7 @@ func cleanVolumeOptions(values []VolumeOption) []VolumeOption {
 	result := make([]VolumeOption, 0, len(values))
 	seen := make(map[int]struct{})
 	for _, value := range values {
-		if value.VolumeML <= 0 || value.Price < 0 {
+		if !isRequiredVolume(value.VolumeML) || value.Price < 0 {
 			continue
 		}
 		if _, ok := seen[value.VolumeML]; ok {
@@ -429,7 +476,40 @@ func cleanVolumeOptions(values []VolumeOption) []VolumeOption {
 		seen[value.VolumeML] = struct{}{}
 		result = append(result, value)
 	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].VolumeML < result[j].VolumeML
+	})
 	return result
+}
+
+func hasRequiredVolumeOptions(values []VolumeOption) bool {
+	if len(values) != 3 {
+		return false
+	}
+	for _, volumeML := range []int{3, 5, 10} {
+		if _, ok := priceForVolume(values, volumeML); !ok {
+			return false
+		}
+	}
+	return true
+}
+
+func isRequiredVolume(volumeML int) bool {
+	switch volumeML {
+	case 3, 5, 10:
+		return true
+	default:
+		return false
+	}
+}
+
+func priceForVolume(values []VolumeOption, volumeML int) (float64, bool) {
+	for _, value := range values {
+		if value.VolumeML == volumeML {
+			return value.Price, true
+		}
+	}
+	return 0, false
 }
 
 func decodeStrings(raw []byte) []string {

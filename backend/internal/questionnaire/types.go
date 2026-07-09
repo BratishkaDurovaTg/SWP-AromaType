@@ -44,6 +44,7 @@ type RecommendationItem struct {
 	ID               string           `json:"id"`
 	Name             string           `json:"name"`
 	Brand            string           `json:"brand"`
+	Gender           string           `json:"gender"`
 	ImageURL         string           `json:"imageUrl"`
 	Price            string           `json:"price"`
 	Psychotype       string           `json:"psychotype"`
@@ -59,6 +60,7 @@ type Fragrance struct {
 	ID               string           `json:"id"`
 	Name             string           `json:"name"`
 	Brand            string           `json:"brand"`
+	Gender           string           `json:"gender"`
 	ImageURL         string           `json:"imageUrl"`
 	Price            string           `json:"price"`
 	VolumeOptions    []VolumeOption   `json:"volumeOptions"`
@@ -87,6 +89,7 @@ type PsychotypeScores struct {
 type CreateFragranceRequest struct {
 	Name             string           `json:"name"`
 	Brand            string           `json:"brand"`
+	Gender           string           `json:"gender"`
 	ImageURL         string           `json:"imageUrl"`
 	Price            float64          `json:"price"`
 	VolumeOptions    []VolumeOption   `json:"volumeOptions"`

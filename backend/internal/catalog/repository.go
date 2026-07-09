@@ -22,7 +22,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 func (r *Repository) ListFragrances(ctx context.Context) ([]questionnaire.Fragrance, error) {
 	rows, err := r.db.Query(ctx, `
-SELECT id, name, brand, image_url, price::TEXT, volume_options, description,
+SELECT id, name, brand, gender, image_url, price::TEXT, volume_options, description,
 	top_notes, middle_notes, base_notes, main_accords, psychotype, psychotype_scores, is_active
 FROM fragrances
 ORDER BY name
@@ -45,7 +45,7 @@ ORDER BY name
 
 func (r *Repository) GetFragrance(ctx context.Context, id string) (questionnaire.Fragrance, error) {
 	row := r.db.QueryRow(ctx, `
-SELECT id, name, brand, image_url, price::TEXT, volume_options, description,
+SELECT id, name, brand, gender, image_url, price::TEXT, volume_options, description,
 	top_notes, middle_notes, base_notes, main_accords, psychotype, psychotype_scores, is_active
 FROM fragrances
 WHERE id = $1
@@ -86,15 +86,16 @@ func (r *Repository) UpsertFragrance(ctx context.Context, item questionnaire.Fra
 
 	_, err = r.db.Exec(ctx, `
 INSERT INTO fragrances (
-	id, name, brand, image_url, price, volume_options, description,
+	id, name, brand, gender, image_url, price, volume_options, description,
 	top_notes, middle_notes, base_notes, main_accords, psychotype, psychotype_scores, is_active
 ) VALUES (
-	$1, $2, $3, $4, $5::NUMERIC, $6::JSONB, $7,
-	$8::JSONB, $9::JSONB, $10::JSONB, $11::JSONB, $12, $13::JSONB, $14
+	$1, $2, $3, $4, $5, $6::NUMERIC, $7::JSONB, $8,
+	$9::JSONB, $10::JSONB, $11::JSONB, $12::JSONB, $13, $14::JSONB, $15
 )
 ON CONFLICT (id) DO UPDATE SET
 	name = EXCLUDED.name,
 	brand = EXCLUDED.brand,
+	gender = EXCLUDED.gender,
 	image_url = EXCLUDED.image_url,
 	price = EXCLUDED.price,
 	volume_options = EXCLUDED.volume_options,
@@ -107,7 +108,7 @@ ON CONFLICT (id) DO UPDATE SET
 	psychotype_scores = EXCLUDED.psychotype_scores,
 	is_active = EXCLUDED.is_active,
 	updated_at = now()
-`, item.ID, item.Name, item.Brand, item.ImageURL, item.Price, volumeOptions, item.Description,
+`, item.ID, item.Name, item.Brand, item.Gender, item.ImageURL, item.Price, volumeOptions, item.Description,
 		topNotes, middleNotes, baseNotes, mainAccords, item.Psychotype, psychotypeScores, item.IsActive)
 	return err
 }
@@ -124,6 +125,7 @@ func scanFragrance(row fragranceScanner) (questionnaire.Fragrance, error) {
 		&item.ID,
 		&item.Name,
 		&item.Brand,
+		&item.Gender,
 		&item.ImageURL,
 		&item.Price,
 		&volumeOptions,

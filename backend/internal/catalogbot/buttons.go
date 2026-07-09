@@ -16,8 +16,12 @@ type editableField struct {
 var editableFields = []editableField{
 	{key: "name", label: "Название"},
 	{key: "brand", label: "Бренд"},
+	{key: "gender", label: "Пол"},
 	{key: "price", label: "Цена"},
 	{key: "volumes", label: "Объемы"},
+	{key: "price_3ml", label: "Цена 3 мл"},
+	{key: "price_5ml", label: "Цена 5 мл"},
+	{key: "price_10ml", label: "Цена 10 мл"},
 	{key: "description", label: "Описание"},
 	{key: "accords", label: "Аккорды"},
 	{key: "top", label: "Верхние ноты"},

@@ -37,8 +37,12 @@ toggling `is_active`, and returning to the catalog.
 
 - `name`
 - `brand`
+- `gender`
 - `price`
 - `volumes`
+- `price_3ml`
+- `price_5ml`
+- `price_10ml`
 - `description`
 - `top`
 - `middle`
@@ -53,11 +57,14 @@ toggling `is_active`, and returning to the catalog.
 
 ```text
 /set miami-shake name Miami Shake
-/set miami-shake price 8393
-/set miami-shake volumes 50:8393, 100:12990
+/set miami-shake gender female
+/set miami-shake price_3ml 8393
+/set miami-shake price_5ml 11990
+/set miami-shake price_10ml 18990
+/set miami-shake volumes 3:8393, 5:11990, 10:18990
 /set miami-shake top клубника, бергамот
 /set miami-shake psychotype aesthetic
-/set miami-shake scores drive:20, focus:35, aesthetic:90, power:25
+/set miami-shake scores drive:20, focus:20, aesthetic:40, power:20
 /set miami-shake active yes
 /photo miami-shake
 ```

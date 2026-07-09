@@ -3,6 +3,7 @@ package catalogbot
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/BratishkaDurovaTg/SWP-AromaType/backend/internal/questionnaire"
@@ -12,8 +13,10 @@ const (
 	addStepID = iota
 	addStepName
 	addStepBrand
-	addStepPrice
-	addStepVolumes
+	addStepGender
+	addStepPrice3
+	addStepPrice5
+	addStepPrice10
 	addStepDescription
 	addStepTop
 	addStepMiddle
@@ -33,10 +36,14 @@ func addPrompt(step int) string {
 		return "Название товара."
 	case addStepBrand:
 		return "Бренд."
-	case addStepPrice:
-		return "Цена, например 8393."
-	case addStepVolumes:
-		return "Объемы в формате 50:8393, 100:12990. Если не нужно, отправьте -"
+	case addStepGender:
+		return "Пол аромата: male, female или unisex."
+	case addStepPrice3:
+		return "Цена для объема 3 мл, например 8393."
+	case addStepPrice5:
+		return "Цена для объема 5 мл, например 11990."
+	case addStepPrice10:
+		return "Цена для объема 10 мл, например 18990."
 	case addStepDescription:
 		return "Описание товара."
 	case addStepTop:
@@ -50,7 +57,7 @@ func addPrompt(step int) string {
 	case addStepPsychotype:
 		return "Психотип: drive, focus, aesthetic, power или balanced."
 	case addStepScores:
-		return "Scores: drive:20, focus:35, aesthetic:90, power:25"
+		return "Scores: drive:20, focus:20, aesthetic:40, power:20. Сумма должна быть 100."
 	case addStepActive:
 		return "Активен? yes/no"
 	case addStepPhoto:
@@ -76,18 +83,34 @@ func (b *Bot) handleAddStep(ctx context.Context, chatID int64, s *session, text 
 		s.draft.Name = text
 	case addStepBrand:
 		s.draft.Brand = text
-	case addStepPrice:
+	case addStepGender:
+		gender, err := parseGender(text)
+		if err != nil {
+			return b.telegram.sendMessage(ctx, chatID, "Пол аромата: male, female или unisex.")
+		}
+		s.draft.Gender = gender
+	case addStepPrice3:
 		price, err := parsePrice(text)
 		if err != nil {
-			return b.telegram.sendMessage(ctx, chatID, "Цена должна быть числом, например 8393.")
+			return b.telegram.sendMessage(ctx, chatID, "Цена для 3 мл должна быть числом, например 8393.")
 		}
 		s.draft.Price = price
-	case addStepVolumes:
-		volumes, err := parseVolumes(text)
+		priceValue, _ := strconv.ParseFloat(price, 64)
+		s.draft.VolumeOptions = setVolumePrice(s.draft.VolumeOptions, 3, priceValue)
+	case addStepPrice5:
+		price, err := parsePrice(text)
 		if err != nil {
-			return b.telegram.sendMessage(ctx, chatID, "Формат объемов: 50:8393, 100:12990 или -")
+			return b.telegram.sendMessage(ctx, chatID, "Цена для 5 мл должна быть числом, например 11990.")
 		}
-		s.draft.VolumeOptions = volumes
+		priceValue, _ := strconv.ParseFloat(price, 64)
+		s.draft.VolumeOptions = setVolumePrice(s.draft.VolumeOptions, 5, priceValue)
+	case addStepPrice10:
+		price, err := parsePrice(text)
+		if err != nil {
+			return b.telegram.sendMessage(ctx, chatID, "Цена для 10 мл должна быть числом, например 18990.")
+		}
+		priceValue, _ := strconv.ParseFloat(price, 64)
+		s.draft.VolumeOptions = setVolumePrice(s.draft.VolumeOptions, 10, priceValue)
 	case addStepDescription:
 		s.draft.Description = text
 	case addStepTop:
@@ -107,7 +130,7 @@ func (b *Bot) handleAddStep(ctx context.Context, chatID int64, s *session, text 
 	case addStepScores:
 		scores, err := parseScores(text)
 		if err != nil {
-			return b.telegram.sendMessage(ctx, chatID, "Формат scores: drive:20, focus:35, aesthetic:90, power:25")
+			return b.telegram.sendMessage(ctx, chatID, "Формат scores: drive:20, focus:20, aesthetic:40, power:20. Сумма должна быть 100.")
 		}
 		s.draft.PsychotypeScores = scores
 	case addStepActive:
