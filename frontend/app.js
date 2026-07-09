@@ -130,6 +130,7 @@ const state = {
   selectedProduct: null,
   selectedVolumeIndex: 0,
   cartItems: new Map(),
+  checkoutError: "",
 };
 
 const app = document.getElementById("app");
@@ -403,10 +404,35 @@ const visibleItems = items;
       <div class="card-list">
         ${visibleItems.length ? visibleItems.map((item, index) => renderRecommendationCard(item, index)).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
       </div>
-      <div class="bottom-actions">
-        <button class="btn" data-action="order-set" type="button">В корзину</button>
-        <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
+      <div class="checkout-form">
+        <input
+          class="checkout-input"
+          data-checkout-required
+          type="text"
+          placeholder="Имя"
+        >
+      
+        <input
+          class="checkout-input"
+          data-checkout-required
+          type="tel"
+          placeholder="Телефон"
+        >
+      
+        <input
+          class="checkout-input"
+          data-checkout-required
+          type="text"
+          placeholder="Адрес"
+        >
       </div>
+
+${state.checkoutError ? `<p class="checkout-error">${escapeHTML(state.checkoutError)}</p>` : ""}
+
+<div class="bottom-actions">
+  <button class="btn" data-action="order-set" type="button">В корзину</button>
+  <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест</button>
+</div>
     </section>
   `);
 }
@@ -472,9 +498,10 @@ async function renderProduct(productId) {
 }
 
 function renderProductLoaded() {
-  const product = state.selectedProduct;
-  const volume = selectedProductVolume();
-  const price = volume ? formatPrice(volume.price) : formatPrice(product.price);
+  const volumeOptions = product.volumeOptions || [];
+  const volume = volumeOptions[state.selectedVolumeIndex];
+  const selectedVolumeMl = volume ? volume.volumeMl : 50;
+const price = volume ? formatPrice(volume.price) : formatPrice(product.price);
 
   phone(`
     <section class="screen product-screen screen-with-footer">
@@ -676,22 +703,30 @@ function handleClick(event) {
     navigate("results");
   }
   if (action === "select-volume") {
-    state.selectedVolumeIndex = Number(target.dataset.volumeIndex);
-    renderProductLoaded();
-  }
+   state.selectedVolumeIndex = Number(target.dataset.volumeIndex);
+   state.selectedVolumeMl = Number(target.dataset.volumeMl);
+   renderProductLoaded();
+ }
   if (action === "add-product-to-cart") {
     addCartItem(state.selectedProduct, selectedProductVolume());
     showToast("Аромат добавлен в корзину");
   }
-  if (action === "order-set") {
-    openOrderContact();
+  if (action === "order-set" || action === "order-product") {
+  submitOrder();
   }
 }
 
 function handleChange(event) {
-  void event;
-}
+  if (!event.target.matches("[data-checkout-required]")) return;
 
+  const requiredFields = [...document.querySelectorAll("[data-checkout-required]")];
+  const allFilled = requiredFields.every((field) => field.value.trim());
+
+  if (allFilled && state.checkoutError) {
+    state.checkoutError = "";
+    renderProductLoaded();
+  }
+}
 function selectAnswer(target) {
   const questionId = target.dataset.questionId;
   const optionId = target.dataset.optionId;
@@ -793,11 +828,28 @@ function addCartItem(product, volume) {
 function formatGender(value) {
   return GENDER_LABELS[String(value || "").toLowerCase()] || GENDER_LABELS.unisex;
 }
+function submitOrder() {
+  const requiredFields = [...document.querySelectorAll("[data-checkout-required]")];
+
+  const hasEmptyField = requiredFields.some((field) => !field.value.trim());
+
+  if (hasEmptyField) {
+    state.checkoutError = "Не все данные введены";
+    renderProductLoaded();
+    return;
+  }
+
+  state.checkoutError = "";
+  openOrderContact();
+}
 
 function openOrderContact() {
-  const product = state.selectedProduct;
+  const volume = (product.volumeOptions || [])[state.selectedVolumeIndex];
+  const volumeText = volume ? `${volume.volumeMl} мл` : "";
+  const priceText = volume ? formatPrice(volume.price) : formatPrice(product.price);
+
   const text = product
-    ? `Здравствуйте! Хочу заказать аромат ${product.brand} ${product.name}.`
+    ? `Здравствуйте! Хочу заказать аромат ${product.brand} ${product.name}, объем ${volumeText}, цена ${priceText}.`
     : "Здравствуйте! Хочу заказать сет пробников Aroma Type.";
   const separator = ORDER_CONTACT_URL.includes("?") ? "&" : "?";
   const url = `${ORDER_CONTACT_URL}${separator}text=${encodeURIComponent(text)}`;
