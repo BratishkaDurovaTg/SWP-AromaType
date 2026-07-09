@@ -1,4 +1,9 @@
 const ORDER_CONTACT_URL = "https://t.me/aroma_type_test_bot";
+const GENDER_LABELS = {
+  male: "для мужчин",
+  female: "для женщин",
+  unisex: "унисекс",
+};
 const PROFILE_HERO_IMAGES = {
   "интеллект и фокус": "./assets/profile-focus.png",
   "драйв и экстраверсия": "./assets/profile-drive.png",
@@ -115,78 +120,6 @@ function injectProfileHeroStyles() {
   document.head.appendChild(style);
 }
 
-function injectCartStyles() {
-  if (document.getElementById("cart-styles")) return;
-
-  const style = document.createElement("style");
-  style.id = "cart-styles";
-  style.textContent = `
-    .cart-screen {
-      overflow-y: auto;
-      padding-bottom: 32px;
-    }
-
-    .cart-list {
-      display: grid;
-      gap: 14px;
-      margin-top: 22px;
-      margin-bottom: 26px;
-      padding-bottom: 10px;
-    }
-
-    .cart-item {
-      align-items: center;
-    }
-
-    .cart-controls {
-      display: grid;
-      gap: 9px;
-      justify-items: center;
-    }
-
-    .cart-qty {
-      width: 40px;
-      height: 40px;
-      min-width: 40px;
-      min-height: 40px;
-      border: 0;
-      border-radius: 50%;
-      background: #4c2f22;
-      color: #fff;
-      font-size: 25px;
-      line-height: 40px;
-      font-weight: 600;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-    }
-
-    .cart-checkout {
-      margin-top: 28px;
-      padding: 18px;
-      border-radius: 26px;
-      background: rgba(255, 255, 255, 0.88);
-      box-shadow: 0 -8px 24px rgba(76, 47, 34, 0.12);
-      position: sticky;
-      bottom: 0;
-      z-index: 5;
-    }
-
-    .card-plus {
-      width: 42px;
-      height: 42px;
-      min-width: 42px;
-      min-height: 42px;
-      font-size: 28px;
-      line-height: 42px;
-      display: grid;
-      place-items: center;
-    }
-  `;
-
-  document.head.appendChild(style);
-}
-
 const state = {
   apiBase: resolveApiBase(),
   questions: [],
@@ -196,14 +129,13 @@ const state = {
   activeFilter: "all",
   selectedProduct: null,
   selectedVolumeIndex: 0,
-  cartItems: new Set(),
+  cartItems: new Map(),
 };
 
 const app = document.getElementById("app");
 const toast = document.getElementById("toast");
 
 injectProfileHeroStyles();
-injectCartStyles();
 initTelegram();
 window.addEventListener("hashchange", render);
 document.addEventListener("submit", handleSubmit);
@@ -447,10 +379,7 @@ function renderResults() {
   }
 
   const { profile, items, totalItems } = state.recommendations;
-  const filters = unique(["all", ...items.flatMap((item) => item.mainAccords || [])]).slice(0, 4);
-  const visibleItems = state.activeFilter === "all"
-    ? items
-    : items.filter((item) => (item.mainAccords || []).includes(state.activeFilter));
+const visibleItems = items;
 
   phone(`
     <section class="screen podbor-screen screen-with-footer">
@@ -468,14 +397,12 @@ function renderResults() {
       <p class="podbor-copy">Каждый аромат выбран под ваш тип — чистый, лёгкий, сдержанный.</p>
       <div class="divider"></div>
 
-      <div class="filters">
-        ${filters.map((filter) => `<button class="chip ${state.activeFilter === filter ? "active" : ""}" data-action="filter" data-filter="${escapeAttr(filter)}" type="button">${filter === "all" ? "Все" : escapeHTML(capitalize(filter))}</button>`).join("")}
-      </div>
+    <div class="divider"></div>
+
 
       <div class="card-list">
         ${visibleItems.length ? visibleItems.map((item, index) => renderRecommendationCard(item, index)).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
       </div>
-
       <div class="bottom-actions">
         <button class="btn" data-action="order-set" type="button">В корзину</button>
         <button class="btn btn-secondary" data-action="restart-quiz" type="button">Пройти тест заново</button>
@@ -486,6 +413,10 @@ function renderResults() {
 
 function renderRecommendationCard(item, index = 0) {
   const cardNumber = String(index + 1).padStart(2, "0");
+  const defaultVolume = {
+    volumeMl: 3,
+    price: item.price,
+  };
 
   return `
     <article class="fragrance-card" data-action="open-product" data-product-id="${escapeAttr(item.id)}">
@@ -508,6 +439,8 @@ function renderRecommendationCard(item, index = 0) {
         class="card-add-btn"
         data-action="add-to-cart"
         data-product-id="${escapeAttr(item.id)}"
+        data-volume-ml="${escapeAttr(defaultVolume.volumeMl)}"
+        data-price="${escapeAttr(defaultVolume.price)}"
         type="button"
         aria-label="Добавить в корзину"
       >+</button>
@@ -540,7 +473,7 @@ async function renderProduct(productId) {
 
 function renderProductLoaded() {
   const product = state.selectedProduct;
-  const volume = (product.volumeOptions || [])[state.selectedVolumeIndex];
+  const volume = selectedProductVolume();
   const price = volume ? formatPrice(volume.price) : formatPrice(product.price);
 
   phone(`
@@ -554,7 +487,7 @@ function renderProductLoaded() {
       <div class="product-hero">
         <div class="product-brand">${escapeHTML(product.brand)}</div>
         <h1 class="product-title">${escapeHTML(product.name)}</h1>
-        <div class="product-gender">унисекс</div>
+        <div class="product-gender">${escapeHTML(formatGender(product.gender))}</div>
         ${renderImage(product.imageUrl, product.name, "product-detail-image")}
       </div>
 
@@ -564,12 +497,12 @@ function renderProductLoaded() {
           <div class="volume-options">
             ${(product.volumeOptions || []).map((option, index) => `
               <button class="volume-option ${index === state.selectedVolumeIndex ? "active" : ""}" data-action="select-volume" data-volume-index="${index}" type="button">${option.volumeMl}</button>
-            `).join("") || `<button class="volume-option active" type="button">50</button>`}
+            `).join("") || `<button class="volume-option active" type="button">3</button>`}
           </div>
         </div>
         <div>
           <div class="price">${price}</div>
-          <button class="btn btn-small" data-action="order-product" type="button">Заказать</button>
+          <button class="btn btn-small" data-action="add-product-to-cart" type="button">Добавить<br>в корзину</button>
         </div>
       </div>
 
@@ -588,7 +521,7 @@ function renderProductLoaded() {
       </div>
 
       <div class="bottom-actions">
-        <button class="btn" data-action="order-product" type="button">Заказать аромат</button>
+        <button class="btn" data-action="add-product-to-cart" type="button">Добавить в корзину</button>
       </div>
     </section>
   `);
@@ -726,15 +659,17 @@ function handleClick(event) {
   if (action === "go-home") {
     navigate("home");
   }
-  if (action === "filter") {
-    state.activeFilter = target.dataset.filter;
-    renderResults();
-  }
+  
   if (action === "open-product") {
     navigate(`product/${target.dataset.productId}`);
   }
   if (action === "add-to-cart") {
-    state.cartItems.add(target.dataset.productId);
+    const product = findRecommendationItem(target.dataset.productId);
+    const volume = {
+      volumeMl: Number(target.dataset.volumeMl) || 3,
+      price: numberValue(target.dataset.price),
+    };
+    addCartItem(product, volume);
     showToast("Аромат добавлен в корзину");
   }
   if (action === "back-results") {
@@ -744,7 +679,11 @@ function handleClick(event) {
     state.selectedVolumeIndex = Number(target.dataset.volumeIndex);
     renderProductLoaded();
   }
-  if (action === "order-set" || action === "order-product") {
+  if (action === "add-product-to-cart") {
+    addCartItem(state.selectedProduct, selectedProductVolume());
+    showToast("Аромат добавлен в корзину");
+  }
+  if (action === "order-set") {
     openOrderContact();
   }
 }
@@ -813,6 +752,46 @@ function openApiSettings() {
   state.apiBase = nextValue.trim().replace(/\/$/, "");
   localStorage.setItem("aroma_api_base", state.apiBase);
   showToast("API URL сохранён");
+}
+
+function selectedProductVolume() {
+  const options = state.selectedProduct?.volumeOptions || [];
+  return options[state.selectedVolumeIndex] || {
+    volumeMl: 3,
+    price: state.selectedProduct?.price,
+  };
+}
+
+function findRecommendationItem(productId) {
+  return (state.recommendations?.items || []).find((item) => item.id === productId) || {
+    id: productId,
+    name: "Аромат",
+    brand: "Aroma Type",
+    price: 0,
+  };
+}
+
+function addCartItem(product, volume) {
+  if (!product?.id) return;
+
+  const volumeMl = Number(volume?.volumeMl) || 3;
+  const price = numberValue(volume?.price || product.price);
+  const key = `${product.id}:${volumeMl}`;
+  const current = state.cartItems.get(key);
+
+  state.cartItems.set(key, {
+    productId: product.id,
+    brand: product.brand || "",
+    name: product.name || "",
+    imageUrl: product.imageUrl || "",
+    volumeMl,
+    price,
+    quantity: current ? current.quantity + 1 : 1,
+  });
+}
+
+function formatGender(value) {
+  return GENDER_LABELS[String(value || "").toLowerCase()] || GENDER_LABELS.unisex;
 }
 
 function openOrderContact() {
