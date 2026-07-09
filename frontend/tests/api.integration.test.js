@@ -36,26 +36,56 @@ const recommendationsFixture = {
       id: "p1",
       brand: "AromaType",
       name: "Mystic Night",
+      gender: "male",
       imageUrl: "",
       reason: "Совпадает с вашим профилем по тегам: Власть / Доминанта.",
       keyNotes: ["Черный перец", "Ладан", "Ветивер"],
       mainAccords: ["deep"],
+      psychotype: "power",
+      psychotypeScores: { drive: 10, focus: 25, aesthetic: 10, power: 55 },
       matchPercent: 99,
-      price: 8393
+      score: 1250,
+      price: "8393"
     },
     {
       id: "p2",
       brand: "AromaType",
       name: "Fresh Office",
+      gender: "unisex",
       imageUrl: "",
       reason: "Совпадает с вашим профилем по тегам: Интеллект / Фокус.",
       keyNotes: ["Бергамот", "Лимон", "Лаванда"],
       mainAccords: ["fresh"],
+      psychotype: "focus",
+      psychotypeScores: { drive: 10, focus: 70, aesthetic: 15, power: 5 },
       matchPercent: 95,
-      price: 7200
+      score: 1100,
+      price: "7200"
     }
   ],
   totalItems: 2
+};
+
+const productFixture = {
+  id: "p1",
+  brand: "AromaType",
+  name: "Mystic Night",
+  gender: "female",
+  imageUrl: "",
+  price: "8393",
+  volumeOptions: [
+    { volumeMl: 3, price: 8393 },
+    { volumeMl: 5, price: 11990 },
+    { volumeMl: 10, price: 18990 }
+  ],
+  description: "Глубокий и загадочный аромат.",
+  topNotes: ["Черный перец"],
+  middleNotes: ["Ладан"],
+  baseNotes: ["Ветивер"],
+  mainAccords: ["Глубокий", "Загадочный"],
+  psychotype: "power",
+  psychotypeScores: { drive: 10, focus: 25, aesthetic: 10, power: 55 },
+  isActive: true
 };
 
 describe("Aroma Type frontend API integration", () => {
@@ -72,6 +102,10 @@ describe("Aroma Type frontend API integration", () => {
         });
 
         return jsonResponse(recommendationsFixture);
+      }
+
+      if (url === "/api/fragrances/p1") {
+        return jsonResponse(productFixture);
       }
 
       throw new Error(`Unexpected API call: ${url}`);
@@ -123,5 +157,19 @@ describe("Aroma Type frontend API integration", () => {
 
     const addButtons = document.querySelectorAll(".card-add-btn");
     expect(addButtons).toHaveLength(2);
+
+    fireEvent.click(screen.getAllByText("Mystic Night")[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText("для женщин")).toBeInTheDocument();
+    });
+
+    expect(screen.getByText("8 393 ₽")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "5" }));
+    expect(screen.getByText("11 990 ₽")).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Добавить/i })[0]);
+    expect(screen.getByText("Аромат добавлен в корзину")).toBeInTheDocument();
   });
 });
