@@ -142,6 +142,7 @@ window.addEventListener("hashchange", render);
 document.addEventListener("submit", handleSubmit);
 document.addEventListener("click", handleClick);
 document.addEventListener("change", handleChange);
+document.addEventListener("input", handleChange);
 render();
 
 function initTelegram() {
@@ -498,10 +499,11 @@ async function renderProduct(productId) {
 }
 
 function renderProductLoaded() {
+  const product = state.selectedProduct;
   const volumeOptions = product.volumeOptions || [];
   const volume = volumeOptions[state.selectedVolumeIndex];
   const selectedVolumeMl = volume ? volume.volumeMl : 50;
-const price = volume ? formatPrice(volume.price) : formatPrice(product.price);
+  const price = volume ? formatPrice(volume.price) : formatPrice(product.price);
 
   phone(`
     <section class="screen product-screen screen-with-footer">
@@ -724,7 +726,8 @@ function handleChange(event) {
 
   if (allFilled && state.checkoutError) {
     state.checkoutError = "";
-    renderProductLoaded();
+    const errorElement = document.querySelector(".checkout-error");
+    if (errorElement) errorElement.remove();
   }
 }
 function selectAnswer(target) {
@@ -830,23 +833,22 @@ function formatGender(value) {
 }
 function submitOrder() {
   const requiredFields = [...document.querySelectorAll("[data-checkout-required]")];
-
   const hasEmptyField = requiredFields.some((field) => !field.value.trim());
 
   if (hasEmptyField) {
     state.checkoutError = "Не все данные введены";
-    renderProductLoaded();
+    render();
     return;
   }
 
   state.checkoutError = "";
   openOrderContact();
 }
-
 function openOrderContact() {
-  const volume = (product.volumeOptions || [])[state.selectedVolumeIndex];
+  const product = state.selectedProduct;
+  const volume = product ? (product.volumeOptions || [])[state.selectedVolumeIndex] : null;
   const volumeText = volume ? `${volume.volumeMl} мл` : "";
-  const priceText = volume ? formatPrice(volume.price) : formatPrice(product.price);
+  const priceText = volume ? formatPrice(volume.price) : product ? formatPrice(product.price) : "";
 
   const text = product
     ? `Здравствуйте! Хочу заказать аромат ${product.brand} ${product.name}, объем ${volumeText}, цена ${priceText}.`
