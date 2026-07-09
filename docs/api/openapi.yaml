@@ -267,6 +267,7 @@ components:
         - id
         - name
         - brand
+        - gender
         - imageUrl
         - price
         - psychotype
@@ -286,6 +287,8 @@ components:
         brand:
           type: string
           example: AromaType
+        gender:
+          $ref: "#/components/schemas/Gender"
         imageUrl:
           type: string
           example: ""
@@ -319,6 +322,7 @@ components:
         - id
         - name
         - brand
+        - gender
         - imageUrl
         - price
         - volumeOptions
@@ -340,6 +344,8 @@ components:
         brand:
           type: string
           example: AromaType
+        gender:
+          $ref: "#/components/schemas/Gender"
         imageUrl:
           type: string
           example: ""
@@ -395,6 +401,13 @@ components:
         - power
         - balanced
       example: focus
+    Gender:
+      type: string
+      enum:
+        - male
+        - female
+        - unisex
+      example: unisex
     PsychotypeScores:
       type: object
       required:
@@ -407,22 +420,22 @@ components:
           type: integer
           minimum: 0
           maximum: 100
-          example: 35
+          example: 10
         focus:
           type: integer
           minimum: 0
           maximum: 100
-          example: 85
+          example: 70
         aesthetic:
           type: integer
           minimum: 0
           maximum: 100
-          example: 45
+          example: 15
         power:
           type: integer
           minimum: 0
           maximum: 100
-          example: 20
+          example: 5
     VolumeOption:
       type: object
       required:
@@ -431,7 +444,7 @@ components:
       properties:
         volumeMl:
           type: integer
-          example: 50
+          example: 3
         price:
           type: number
           example: 490

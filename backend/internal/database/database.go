@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS fragrances (
 	id TEXT PRIMARY KEY,
 	name TEXT NOT NULL,
 	brand TEXT NOT NULL,
+	gender TEXT NOT NULL DEFAULT 'unisex' CHECK (gender IN ('male', 'female', 'unisex')),
 	image_url TEXT NOT NULL DEFAULT '',
 	price NUMERIC(10, 2) NOT NULL DEFAULT 0,
 	volume_options JSONB NOT NULL DEFAULT '[]'::JSONB,
@@ -49,10 +50,10 @@ CREATE TABLE IF NOT EXISTS fragrances (
 	updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE fragrances ADD COLUMN IF NOT EXISTS gender TEXT NOT NULL DEFAULT 'unisex';
 ALTER TABLE fragrances ADD COLUMN IF NOT EXISTS volume_options JSONB NOT NULL DEFAULT '[]'::JSONB;
 ALTER TABLE fragrances ADD COLUMN IF NOT EXISTS psychotype TEXT NOT NULL DEFAULT 'balanced';
 ALTER TABLE fragrances ADD COLUMN IF NOT EXISTS psychotype_scores JSONB NOT NULL DEFAULT '{"drive":0,"focus":0,"aesthetic":0,"power":0}'::JSONB;
-ALTER TABLE fragrances DROP COLUMN IF EXISTS gender;
 ALTER TABLE fragrances DROP COLUMN IF EXISTS volume;
 ALTER TABLE fragrances DROP COLUMN IF EXISTS stock_status;
 ALTER TABLE fragrances DROP COLUMN IF EXISTS longevity;
@@ -206,32 +207,33 @@ INSERT INTO answer_option_tags (answer_option_id, tag_id, weight) VALUES
 ON CONFLICT (answer_option_id, tag_id) DO UPDATE SET weight = EXCLUDED.weight;
 
 INSERT INTO fragrances (
-	id, name, brand, image_url, price, volume_options, description,
+	id, name, brand, gender, image_url, price, volume_options, description,
 	top_notes, middle_notes, base_notes, main_accords, psychotype, psychotype_scores, is_active
 ) VALUES
-	('fresh-office', 'Fresh Office', 'AromaType', '', 490, '[{"volumeMl":50,"price":490},{"volumeMl":100,"price":890}]',
+	('fresh-office', 'Fresh Office', 'AromaType', 'unisex', '', 490, '[{"volumeMl":3,"price":490},{"volumeMl":5,"price":690},{"volumeMl":10,"price":1190}]',
 	 'Чистый и свежий аромат для учебы, офиса и спокойного повседневного образа.',
 	 '["бергамот", "лимон"]', '["лаванда"]', '["мускус"]', '["свежий", "чистый"]',
-	 'focus', '{"drive":35,"focus":85,"aesthetic":45,"power":20}', TRUE),
-	('warm-date', 'Warm Date', 'AromaType', '', 540, '[{"volumeMl":50,"price":540},{"volumeMl":100,"price":980}]',
+	 'focus', '{"drive":10,"focus":70,"aesthetic":15,"power":5}', TRUE),
+	('warm-date', 'Warm Date', 'AromaType', 'female', '', 540, '[{"volumeMl":3,"price":540},{"volumeMl":5,"price":740},{"volumeMl":10,"price":1290}]',
 	 'Мягкий теплый аромат для встреч, свиданий и уютного вечернего настроения.',
 	 '["кардамон"]', '["жасмин"]', '["ваниль", "мускус"]', '["тёплый", "уютный"]',
-	 'aesthetic', '{"drive":25,"focus":35,"aesthetic":90,"power":25}', TRUE),
-	('bright-party', 'Bright Party', 'AromaType', '', 590, '[{"volumeMl":50,"price":590},{"volumeMl":100,"price":1090}]',
+	 'aesthetic', '{"drive":10,"focus":15,"aesthetic":65,"power":10}', TRUE),
+	('bright-party', 'Bright Party', 'AromaType', 'unisex', '', 590, '[{"volumeMl":3,"price":590},{"volumeMl":5,"price":790},{"volumeMl":10,"price":1390}]',
 	 'Яркий энергичный аромат для вечеринок, фестивалей и заметного образа.',
 	 '["грейпфрут"]', '["имбирь"]', '["амброксан"]', '["яркий", "энергичный"]',
-	 'drive', '{"drive":95,"focus":20,"aesthetic":40,"power":45}', TRUE),
-	('mystic-night', 'Mystic Night', 'AromaType', '', 650, '[{"volumeMl":50,"price":650},{"volumeMl":100,"price":1190}]',
+	 'drive', '{"drive":65,"focus":5,"aesthetic":10,"power":20}', TRUE),
+	('mystic-night', 'Mystic Night', 'AromaType', 'male', '', 650, '[{"volumeMl":3,"price":650},{"volumeMl":5,"price":890},{"volumeMl":10,"price":1490}]',
 	 'Глубокий и загадочный аромат для ночного настроения и смелого впечатления.',
 	 '["черный перец"]', '["ладан"]', '["ветивер", "амброксан"]', '["глубокий", "загадочный"]',
-	 'power', '{"drive":25,"focus":70,"aesthetic":35,"power":90}', TRUE),
-	('daily-soft', 'Daily Soft', 'AromaType', '', 450, '[{"volumeMl":50,"price":450},{"volumeMl":100,"price":790}]',
+	 'power', '{"drive":10,"focus":25,"aesthetic":10,"power":55}', TRUE),
+	('daily-soft', 'Daily Soft', 'AromaType', 'unisex', '', 450, '[{"volumeMl":3,"price":450},{"volumeMl":5,"price":640},{"volumeMl":10,"price":1090}]',
 	 'Надежный мягкий аромат на каждый день, когда хочется комфорта и универсальности.',
 	 '["мандарин"]', '["пудровые ноты"]', '["белый мускус"]', '["мягкий", "повседневный"]',
-	 'aesthetic', '{"drive":25,"focus":55,"aesthetic":75,"power":15}', TRUE)
+	 'aesthetic', '{"drive":10,"focus":25,"aesthetic":55,"power":10}', TRUE)
 ON CONFLICT (id) DO UPDATE SET
 	name = EXCLUDED.name,
 	brand = EXCLUDED.brand,
+	gender = EXCLUDED.gender,
 	image_url = EXCLUDED.image_url,
 	price = EXCLUDED.price,
 	volume_options = EXCLUDED.volume_options,

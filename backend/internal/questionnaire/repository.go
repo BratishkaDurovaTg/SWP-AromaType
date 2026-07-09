@@ -128,6 +128,7 @@ SELECT
 	f.id,
 	f.name,
 	f.brand,
+	f.gender,
 	f.image_url,
 	f.price::TEXT,
 	f.top_notes,
@@ -164,6 +165,7 @@ SELECT
 	id,
 	name,
 	brand,
+	gender,
 	image_url,
 	price::TEXT,
 	volume_options,
@@ -181,6 +183,7 @@ WHERE id = $1 AND is_active = TRUE
 		&fragrance.ID,
 		&fragrance.Name,
 		&fragrance.Brand,
+		&fragrance.Gender,
 		&fragrance.ImageURL,
 		&fragrance.Price,
 		&volumeOptions,
@@ -257,10 +260,10 @@ func (r *Repository) CreateFragrance(ctx context.Context, fragrance Fragrance, t
 	err = tx.QueryRow(ctx, `
 INSERT INTO fragrances (
 	id, name, brand, image_url, price, volume_options, description,
-	top_notes, middle_notes, base_notes, main_accords, psychotype, psychotype_scores, is_active
+	top_notes, middle_notes, base_notes, main_accords, gender, psychotype, psychotype_scores, is_active
 ) VALUES (
 	$1, $2, $3, $4, $5, $6::JSONB, $7,
-	$8::JSONB, $9::JSONB, $10::JSONB, $11::JSONB, $12, $13::JSONB, $14
+	$8::JSONB, $9::JSONB, $10::JSONB, $11::JSONB, $12, $13, $14::JSONB, $15
 )
 RETURNING price::TEXT
 `,
@@ -275,6 +278,7 @@ RETURNING price::TEXT
 		middleNotes,
 		baseNotes,
 		mainAccords,
+		fragrance.Gender,
 		fragrance.Psychotype,
 		psychotypeScores,
 		fragrance.IsActive,
@@ -358,6 +362,7 @@ type FragranceTagRow struct {
 	ID               string `db:"id"`
 	Name             string `db:"name"`
 	Brand            string `db:"brand"`
+	Gender           string `db:"gender"`
 	ImageURL         string `db:"image_url"`
 	Price            string `db:"price"`
 	TopNotes         []byte `db:"top_notes"`
