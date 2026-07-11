@@ -308,7 +308,6 @@ The next Sprint will focus on implementing the remaining customer feedback, impr
 
 ## Branch Protection
 
-![Branch Protection](images/branch-protection.png)
 
 ## Coverage / Test Report
 
@@ -324,7 +323,7 @@ The next Sprint will focus on implementing the remaining customer feedback, impr
 
 ## Example Reviewed Issue-Linked PR
 
-![Reviewed PR](images/reviewed-pr.png)
+
 
 ## Product Backlog
 
