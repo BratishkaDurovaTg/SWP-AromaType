@@ -14,11 +14,11 @@ A Telegram-based fragrance recommendation system consisting of a Telegram user b
 
 ## Product Backlog
 
-[Product Backlog Board](https://github.com/users/BratishkaDurovaTg/projects/1)
+Product Backlog Board
 
 ## Sprint Backlog
 
-[Sprint Backlog Board](https://github.com/users/BratishkaDurovaTg/projects/1/views/2)
+Sprint Backlog Board
 
 ## Sprint Milestone (Sprint 3)
 
@@ -136,7 +136,7 @@ Deployment view document
 
 ## Architecture Overview
 
-[docs/architecture/README.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/architecture/README.md)
+Architecture README
 
 ---
 
@@ -157,8 +157,9 @@ Deployment view document
 ---
 
 ## Architecture Decision Records (ADR)
+ADR
 
-[ADR Folder](https://github.com/BratishkaDurovaTg/SWP-AromaType/tree/main/docs/architecture/adr)
+
 
 ---
 
