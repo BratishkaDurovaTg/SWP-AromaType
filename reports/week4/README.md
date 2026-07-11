@@ -12,13 +12,13 @@ A Telegram Mini App that recommends fragrances based on a personality questionna
 
 # Product Backlog
 
-[Product Backlog Board](https://github.com/users/BratishkaDurovaTg/projects/1)
+Project board was used for task tracking.
 
 ---
 
 # Sprint Backlog
 
-[Sprint Backlog Board](https://github.com/users/BratishkaDurovaTg/projects/1/views/2)
+Project board was used for task tracking.
 
 ---
 
