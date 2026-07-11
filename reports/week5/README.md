@@ -126,12 +126,12 @@ These improvements were recorded as follow-up Product Backlog Items and will be 
 
 ## Development Process
 
-[docs/development-process.md](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/development-process.md)
+Deployment view document
 
 
 ## Hosted Documentation Site
 
-[Project Documentation](https://bratishkadurovatg.github.io/SWP-AromaType/)
+Deployment view document
 
 
 ## Architecture Overview
@@ -144,7 +144,7 @@ These improvements were recorded as follow-up Product Backlog Items and will be 
 
 ## Static View
 
-[Static architecture diagram](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/architecture/static-view.puml)
+Deployment view document
 
 ## Dynamic View
 
@@ -152,7 +152,7 @@ These improvements were recorded as follow-up Product Backlog Items and will be 
 
 ## Deployment View
 
-[Deployment diagram](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/architecture/deployment-view.puml)
+Deployment view document
 
 ---
 
