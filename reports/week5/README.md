@@ -148,7 +148,7 @@ Deployment view document
 
 ## Dynamic View
 
-[Dynamic architecture diagram](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/main/docs/architecture/dynamic-view.puml)
+Dynamic view
 
 ## Deployment View
 
