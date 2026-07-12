@@ -3,6 +3,14 @@
 AromaType is a Telegram Mini App for personalized fragrance discovery through
 style, situations, and feelings rather than perfume terminology.
 
+## Quick Access
+
+- **Telegram Mini App:** [@aroma_type_test_bot](https://t.me/aroma_type_test_bot)
+- **Production deployment:** [https://aromatypes.serveousercontent.com](https://aromatypes.serveousercontent.com)
+- **Hosted documentation:** [GitHub Pages](https://github.com/BratishkaDurovaTg/SWP-AromaType/deployments/github-pages)
+- **Source code:** [GitHub repository](https://github.com/BratishkaDurovaTg/SWP-AromaType)
+- **License:** MIT
+
 ## Repository Structure
 
 ```text
@@ -13,17 +21,24 @@ docs/      API contract, database schema notes, product docs
 
 ## Documentation
 
-- [Database schema](docs/db-schema.md)
-- [API contract](docs/api/openapi.yaml)
+- [Contributing guide](CONTRIBUTING.md)
+- [Agent guidance](AGENTS.md)
+- [Customer handover](docs/customer-handover.md)
+- [User stories](docs/user-stories.md)
+- [Definition of Done](docs/definition-of-done.md)
+- [Roadmap](docs/roadmap.md)
 - [Testing and QA status](docs/testing.md)
 - [Quality requirements](docs/quality-requirements.md)
+- [Quality requirement tests](docs/quality-requirement-tests.md)
 - [User acceptance tests](docs/user-acceptance-tests.md)
-- [Catalog bot](docs/catalog-bot.md)
 - [Deployment guide](docs/deployment.md)
+- [API contract](docs/api/openapi.yaml)
+- [Database schema](docs/db-schema.md)
+- [Catalog bot](docs/catalog-bot.md)
 
 ## Local Development
 
-### Full MVP v1 frontend + backend
+### Full stack (frontend + backend)
 
 Requirements:
 
@@ -94,251 +109,9 @@ separate password-protected Telegram bot workflow, not through this web client.
 
 ## Team Workflow
 
-- `main` stores stable versions.
-- Work in feature branches, for example `feature/questionnaire-logic`.
+- `main` and `dev` are protected branches — no direct pushes.
+- Create branches from the relevant issue: `<issue-number>-short-description`.
+- Submit changes through a Pull Request and obtain approval from another team member.
+- Use merge commits (squash and rebase are disabled).
 - Keep API changes documented in `docs/api/openapi.yaml`.
-- Frontend can use mock data until backend endpoints are ready.
----
-# Week 2 Assignment Report - Aroma Type
-
-## Project Information
-
-### Project Name
-
-Aroma Type
-
-### Short Description
-
-Aroma Type is a Telegram Mini App focused on fragrance discovery and perfume recommendation through guided questionnaires and personalized matching logic.
-
-### License
-
-[MIT License](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/dev/LICENSE)
-
-# Repository
-
-[GitHub Repository](https://github.com/BratishkaDurovaTg/SWP-AromaType)
-
----
-
-# User Stories
-
-[user-stories.md](docs/user-stories.md)
-
----
-
-# Prototype and Interface Artifacts
-
-## Interactive Prototype
-
-[Figma Prototype](https://www.figma.com/design/XjzUCfIDDInU8ZnSrpE1dC/v1?node-id=0-1&t=GuL1SLLDE3jpRViS-1)
-
-Covered User Stories:
-
-* US-01
-* US-02
-* US-03
-* US-04
-
----
-
-# API Interface
-
-## Swagger UI
-
-Swagger UI is available locally at `http://localhost:8080/docs` after starting Docker Compose.
-
-## OpenAPI Specification
-
-The OpenAPI specification is available through the Swagger UI deployment.
-
-
-## Implemented API Endpoints
-
-* `GET /api/questions`
-* `POST /api/recommendations`
-* `GET /api/fragrances/{id}`
-
-## Postman Collection
-
-No Postman collection was created during Week 2.
-Swagger UI was used for API testing and demonstration instead.
-
----
-
-# MVP v0
-
-## Report
-
-[mvp-v0-report.md](reports/week2/mvp-v0-report.md)
-
----
-
-## Deployment
-
-[Frontend MVP Deployment](https://t.me/aroma_type_test_bot)
-
----
-
-## Accessible Implementation
-
-The current MVP v0 frontend deployment and temporary backend Swagger deployment serve as the accessible implementation for Week 2.
-
-## Run Instructions
-
-1. Open the deployment URL.
-2. Launch the Telegram Mini App.
-3. Verify successful initialization.
-4. Run smoke-check scenario.
-
----
-
-## Public Video Demonstration
-
-The Week 2 demonstration was delivered separately and is not hosted in the repository.
-
----
-
-# Pull Requests and Reviews
-
-## PR/MR Template
-
-No dedicated PR template was used during Week 2.
-
-## Reviewed PRs
-
-
-* [PR #2 - docs: add analysis report](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/2)
-* [PR #3 - docs: add customer meeting summary](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/3)
-* [PR #4 - docs: add customer meeting transcript](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/4)
-* [PR #5 - docs: add llm usage report](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/5)
-* [PR #6 - docs: add mvp v0 report](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/6)
-* [PR #7 - docs: add week 2 user stories](https://github.com/BratishkaDurovaTg/SWP-AromaType/pull/7)
-
-
----
-
-# Lychee Link Checking
-
-## Lychee Configuration
-
-[Lychee Configuration](https://github.com/BratishkaDurovaTg/SWP-AromaType/blob/dev/.github/workflows/lychee.yml)
-
-## Latest Successful Protected Branch Run
-
-[Latest Successful Protected Branch Run](https://github.com/BratishkaDurovaTg/SWP-AromaType/actions/runs/27499290355)
-
----
-
-## Excluded Links
-
-The following temporary links were excluded from automatic validation:
-
-* Temporary Cloudflare Swagger deployment
-
-### Manual Verification
-
-All excluded links were manually verified in the browser before submission.
-
----
-
-# Screenshots
-
-## Protected Default Branch
-
-![Protected Branch](reports/week2/protected-branch.png)
-
----
-
-## Reviewed Pull Request
-
-![Reviewed PR](reports/week2/reviewed-pr.png)
-
----
-
-## Interactive Prototype
-
-![Prototype](reports/week2/prototype.png)
-
----
-
-## MVP v0 Deployment
-
-![MVP v0](reports/week2/mvp-v0.png)
-
----
-
-# Coverage
-
-## Prototype Coverage
-
-The interactive prototype covers the following stable user story IDs:
-
-* US-01
-* US-02
-* US-03
-* US-04
-
-The prototype demonstrates:
-
-* onboarding flow;
-* questionnaire navigation;
-* loading and error states;
-* fragrance recommendation screens.
-
----
-
-## MVP v0 Coverage
-
-MVP v0 currently provides the technical foundation for:
-
-* Telegram Mini App integration;
-* frontend deployment;
-* backend questionnaire and recommendation setup;
-* environment validation.
-
-Related User Stories:
-
-* US-01
-* US-02
-
-Detailed smoke-check documentation is available in:
-[mvp-v0-report.md](reports/week2/mvp-v0-report.md)
-
----
-
-# Customer Review Artifacts
-
-## Customer Transcript
-
-The customer approved transcript publication for Assignment 2 documentation purposes.
-
-[customer-meeting-transcript.md](reports/week2/customer-meeting-transcript.md)
-
----
-
-## Customer Meeting Summary
-
-[customer-meeting-summary.md](reports/week2/customer-meeting-summary.md)
-
----
-
-# Weekly Analysis
-
-[analysis.md](reports/week2/analysis.md)
-
----
-
-# LLM Usage Report
-
-[llm-report.md](reports/week2/llm-report.md)
-
-
-## Frontend tests
-
-To run frontend automated tests locally:
-
-```bash
-cd frontend
-npm install
-npm test
+- See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full contribution workflow.
