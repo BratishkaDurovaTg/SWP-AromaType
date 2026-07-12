@@ -193,13 +193,16 @@ func TestCreateFragranceCleansPayloadAndUsesDefaultActive(t *testing.T) {
 	payload := CreateFragranceRequest{
 		Name:     "  Miami Shake  ",
 		Brand:    "  Juliette Has A Gun ",
+		Gender:   " женский ",
 		ImageURL: " /uploads/miami.png ",
 		Price:    8393,
 		VolumeOptions: []VolumeOption{
-			{VolumeML: 50, Price: 8393},
-			{VolumeML: 50, Price: 8393},
+			{VolumeML: 3, Price: 8393},
+			{VolumeML: 3, Price: 8393},
+			{VolumeML: 5, Price: 11990},
+			{VolumeML: 10, Price: 18990},
 			{VolumeML: 0, Price: 100},
-			{VolumeML: 100, Price: -1},
+			{VolumeML: 50, Price: 100},
 		},
 		TopNotes:    []string{" Клубника ", "Клубника", ""},
 		MiddleNotes: []string{"Мороженое"},
@@ -207,9 +210,9 @@ func TestCreateFragranceCleansPayloadAndUsesDefaultActive(t *testing.T) {
 		MainAccords: []string{"Сладкий", "Сладкий", "Фруктовый"},
 		Psychotype:  PsychotypeAesthetic,
 		PsychotypeScores: PsychotypeScores{
-			Drive:     -10,
-			Focus:     40,
-			Aesthetic: 120,
+			Drive:     0,
+			Focus:     20,
+			Aesthetic: 60,
 			Power:     20,
 		},
 		TagIDs: []string{"psych_aesthetic", "psych_aesthetic", "sweet", ""},
@@ -229,7 +232,13 @@ func TestCreateFragranceCleansPayloadAndUsesDefaultActive(t *testing.T) {
 	if !fragrance.IsActive {
 		t.Fatal("fragrance should be active by default")
 	}
-	if !reflect.DeepEqual(fragrance.VolumeOptions, []VolumeOption{{VolumeML: 50, Price: 8393}}) {
+	if fragrance.Gender != GenderFemale {
+		t.Fatalf("expected normalized female gender, got %q", fragrance.Gender)
+	}
+	if fragrance.Price != "8393" {
+		t.Fatalf("expected base price from 3 ml, got %q", fragrance.Price)
+	}
+	if !reflect.DeepEqual(fragrance.VolumeOptions, []VolumeOption{{VolumeML: 3, Price: 8393}, {VolumeML: 5, Price: 11990}, {VolumeML: 10, Price: 18990}}) {
 		t.Fatalf("unexpected volume options: %#v", fragrance.VolumeOptions)
 	}
 	if !reflect.DeepEqual(fragrance.TopNotes, []string{"Клубника"}) {
@@ -238,12 +247,35 @@ func TestCreateFragranceCleansPayloadAndUsesDefaultActive(t *testing.T) {
 	if fragrance.Psychotype != PsychotypeAesthetic {
 		t.Fatalf("expected aesthetic psychotype, got %q", fragrance.Psychotype)
 	}
-	expectedScores := PsychotypeScores{Drive: 0, Focus: 40, Aesthetic: 100, Power: 20}
+	expectedScores := PsychotypeScores{Drive: 0, Focus: 20, Aesthetic: 60, Power: 20}
 	if fragrance.PsychotypeScores != expectedScores {
 		t.Fatalf("unexpected psychotype scores: %#v", fragrance.PsychotypeScores)
 	}
 	if !reflect.DeepEqual(repo.createdTagIDs, []string{"psych_aesthetic", "sweet"}) {
 		t.Fatalf("unexpected tag ids: %#v", repo.createdTagIDs)
+	}
+}
+
+func TestCreateFragranceRejectsInvalidPsychotypeScoreSum(t *testing.T) {
+	_, err := NewService(&fakeFragranceRepository{}).CreateFragrance(context.Background(), CreateFragranceRequest{
+		Name:   "Miami Shake",
+		Brand:  "Juliette Has A Gun",
+		Gender: GenderFemale,
+		VolumeOptions: []VolumeOption{
+			{VolumeML: 3, Price: 8393},
+			{VolumeML: 5, Price: 11990},
+			{VolumeML: 10, Price: 18990},
+		},
+		Psychotype: PsychotypeAesthetic,
+		PsychotypeScores: PsychotypeScores{
+			Drive:     30,
+			Focus:     30,
+			Aesthetic: 30,
+			Power:     30,
+		},
+	})
+	if !errors.Is(err, ErrInvalidFragrance) {
+		t.Fatalf("expected ErrInvalidFragrance, got %v", err)
 	}
 }
 

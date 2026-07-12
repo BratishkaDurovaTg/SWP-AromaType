@@ -54,15 +54,20 @@ func parseVolumes(value string) ([]questionnaire.VolumeOption, error) {
 
 	parts := splitList(value)
 	result := make([]questionnaire.VolumeOption, 0, len(parts))
+	seen := make(map[int]struct{}, len(parts))
 	for _, part := range parts {
 		volume, price, ok := strings.Cut(part, ":")
 		if !ok {
-			return nil, fmt.Errorf("%w: volume must use 50:8393 format", errInvalidValue)
+			return nil, fmt.Errorf("%w: volume must use 3:8393 format", errInvalidValue)
 		}
 		volumeML, err := strconv.Atoi(strings.TrimSpace(volume))
-		if err != nil || volumeML <= 0 {
+		if err != nil || !isSupportedVolume(volumeML) {
 			return nil, errInvalidValue
 		}
+		if _, ok := seen[volumeML]; ok {
+			return nil, errInvalidValue
+		}
+		seen[volumeML] = struct{}{}
 		priceValue, err := strconv.ParseFloat(strings.ReplaceAll(strings.TrimSpace(price), ",", "."), 64)
 		if err != nil || priceValue < 0 {
 			return nil, errInvalidValue
@@ -101,6 +106,9 @@ func parseScores(value string) (questionnaire.PsychotypeScores, error) {
 			return scores, fmt.Errorf("%w: unknown score key %q", errInvalidValue, key)
 		}
 	}
+	if scores.Drive+scores.Focus+scores.Aesthetic+scores.Power != 100 {
+		return scores, fmt.Errorf("%w: scores sum must be 100", errInvalidValue)
+	}
 	return scores, nil
 }
 
@@ -131,6 +139,54 @@ func normalizePsychotype(value string) (string, error) {
 	default:
 		return "", errInvalidValue
 	}
+}
+
+func parseGender(value string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "male", "m", "man", "men", "м", "муж", "мужской":
+		return questionnaire.GenderMale, nil
+	case "female", "f", "woman", "women", "ж", "жен", "женский":
+		return questionnaire.GenderFemale, nil
+	case "unisex", "u", "унисекс", "универсальный":
+		return questionnaire.GenderUnisex, nil
+	default:
+		return "", errInvalidValue
+	}
+}
+
+func isSupportedVolume(volumeML int) bool {
+	switch volumeML {
+	case 3, 5, 10:
+		return true
+	default:
+		return false
+	}
+}
+
+func setVolumePrice(values []questionnaire.VolumeOption, volumeML int, price float64) []questionnaire.VolumeOption {
+	next := make([]questionnaire.VolumeOption, 0, len(values)+1)
+	updated := false
+	for _, value := range values {
+		if value.VolumeML == volumeML {
+			next = append(next, questionnaire.VolumeOption{VolumeML: volumeML, Price: price})
+			updated = true
+			continue
+		}
+		next = append(next, value)
+	}
+	if !updated {
+		next = append(next, questionnaire.VolumeOption{VolumeML: volumeML, Price: price})
+	}
+	return next
+}
+
+func volumePrice(values []questionnaire.VolumeOption, volumeML int) (float64, bool) {
+	for _, value := range values {
+		if value.VolumeML == volumeML {
+			return value.Price, true
+		}
+	}
+	return 0, false
 }
 
 func validateID(value string) (string, error) {

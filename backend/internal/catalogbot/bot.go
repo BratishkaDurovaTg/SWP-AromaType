@@ -233,8 +233,9 @@ func (b *Bot) startAdd(ctx context.Context, chatID int64, s *session) error {
 	s.step = addStepID
 	s.draft = questionnaire.Fragrance{
 		IsActive:         true,
+		Gender:           questionnaire.GenderUnisex,
 		Psychotype:       "balanced",
-		PsychotypeScores: questionnaire.PsychotypeScores{Drive: 50, Focus: 50, Aesthetic: 50, Power: 50},
+		PsychotypeScores: questionnaire.PsychotypeScores{Drive: 25, Focus: 25, Aesthetic: 25, Power: 25},
 	}
 	return b.telegram.sendMessageMarkup(ctx, chatID, addPrompt(s.step), mainMenuKeyboard())
 }
@@ -315,17 +316,20 @@ func menuText() string {
 /cancel — отменить текущее действие
 
 Поля для /set:
-name, brand, price, volumes, description, top, middle, base, accords, psychotype, scores, active, image_url`)
+name, brand, gender, price, volumes, price_3ml, price_5ml, price_10ml, description, top, middle, base, accords, psychotype, scores, active, image_url`)
 }
 
 func editHelp(id string) string {
 	return fmt.Sprintf(`Примеры:
 /set %[1]s name Miami Shake
-/set %[1]s price 8393
-/set %[1]s volumes 50:8393, 100:12990
+/set %[1]s gender female
+/set %[1]s price_3ml 8393
+/set %[1]s price_5ml 11990
+/set %[1]s price_10ml 18990
+/set %[1]s volumes 3:8393, 5:11990, 10:18990
 /set %[1]s top клубника, бергамот
 /set %[1]s psychotype aesthetic
-/set %[1]s scores drive:20, focus:35, aesthetic:90, power:25
+/set %[1]s scores drive:20, focus:20, aesthetic:40, power:20
 /set %[1]s active yes
 /photo %[1]s`, id)
 }
@@ -420,10 +424,18 @@ func fieldPrompt(field string) string {
 		return "Введите новое название товара."
 	case "brand":
 		return "Введите бренд."
+	case "gender":
+		return "Введите пол аромата: male, female или unisex."
 	case "price":
 		return "Введите цену числом, например 8393."
 	case "volumes":
-		return "Введите объемы: 50:8393, 100:12990. Если не нужно, отправьте -"
+		return "Введите цены объемов: 3:8393, 5:11990, 10:18990."
+	case "price_3ml":
+		return "Введите цену для 3 мл."
+	case "price_5ml":
+		return "Введите цену для 5 мл."
+	case "price_10ml":
+		return "Введите цену для 10 мл."
 	case "description":
 		return "Введите описание товара."
 	case "accords":
@@ -437,7 +449,7 @@ func fieldPrompt(field string) string {
 	case "psychotype":
 		return "Введите психотип: drive, focus, aesthetic, power или balanced."
 	case "scores":
-		return "Введите scores: drive:20, focus:35, aesthetic:90, power:25."
+		return "Введите scores: drive:20, focus:20, aesthetic:40, power:20. Сумма должна быть 100."
 	case "active":
 		return "Активен товар? yes/no."
 	case "image_url":
@@ -455,6 +467,12 @@ func applyField(item *questionnaire.Fragrance, field string, value string) error
 		item.Name = value
 	case "brand", "бренд":
 		item.Brand = value
+	case "gender", "sex", "пол":
+		gender, err := parseGender(value)
+		if err != nil {
+			return err
+		}
+		item.Gender = gender
 	case "price", "цена":
 		price, err := parsePrice(value)
 		if err != nil {
@@ -467,6 +485,31 @@ func applyField(item *questionnaire.Fragrance, field string, value string) error
 			return err
 		}
 		item.VolumeOptions = volumes
+		if price, ok := volumePrice(volumes, 3); ok {
+			item.Price = strconv.FormatFloat(price, 'f', -1, 64)
+		}
+	case "price_3ml", "price_3", "3ml", "3мл":
+		price, err := parsePrice(value)
+		if err != nil {
+			return err
+		}
+		priceValue, _ := strconv.ParseFloat(price, 64)
+		item.Price = price
+		item.VolumeOptions = setVolumePrice(item.VolumeOptions, 3, priceValue)
+	case "price_5ml", "price_5", "5ml", "5мл":
+		price, err := parsePrice(value)
+		if err != nil {
+			return err
+		}
+		priceValue, _ := strconv.ParseFloat(price, 64)
+		item.VolumeOptions = setVolumePrice(item.VolumeOptions, 5, priceValue)
+	case "price_10ml", "price_10", "10ml", "10мл":
+		price, err := parsePrice(value)
+		if err != nil {
+			return err
+		}
+		priceValue, _ := strconv.ParseFloat(price, 64)
+		item.VolumeOptions = setVolumePrice(item.VolumeOptions, 10, priceValue)
 	case "description", "desc", "описание":
 		item.Description = value
 	case "top", "top_notes", "верх":
@@ -514,11 +557,17 @@ func validateFragrance(item questionnaire.Fragrance) error {
 	if strings.TrimSpace(item.Name) == "" || strings.TrimSpace(item.Brand) == "" {
 		return errInvalidValue
 	}
+	if _, err := parseGender(item.Gender); err != nil {
+		return err
+	}
 	if _, err := parsePrice(item.Price); err != nil {
 		return err
 	}
 	if _, err := normalizePsychotype(item.Psychotype); err != nil {
 		return err
+	}
+	if item.PsychotypeScores.Drive+item.PsychotypeScores.Focus+item.PsychotypeScores.Aesthetic+item.PsychotypeScores.Power != 100 {
+		return errInvalidValue
 	}
 	return nil
 }
@@ -527,6 +576,7 @@ func formatFragrance(item questionnaire.Fragrance) string {
 	return fmt.Sprintf(`%s
 %s — %s
 Цена: %s
+Пол: %s
 Объемы: %s
 Active: %t
 Психотип: %s
@@ -541,6 +591,7 @@ Scores: drive=%d focus=%d aesthetic=%d power=%d
 		item.Brand,
 		item.Name,
 		item.Price,
+		item.Gender,
 		formatVolumes(item.VolumeOptions),
 		item.IsActive,
 		item.Psychotype,
@@ -562,10 +613,12 @@ func formatVolumes(values []questionnaire.VolumeOption) string {
 		return "-"
 	}
 	parts := make([]string, 0, len(values))
+	sort.Slice(values, func(i, j int) bool {
+		return values[i].VolumeML < values[j].VolumeML
+	})
 	for _, value := range values {
 		parts = append(parts, fmt.Sprintf("%d:%s", value.VolumeML, strconv.FormatFloat(value.Price, 'f', -1, 64)))
 	}
-	sort.Strings(parts)
 	return strings.Join(parts, ", ")
 }
 

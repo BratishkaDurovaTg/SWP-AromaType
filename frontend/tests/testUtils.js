@@ -13,6 +13,21 @@ export function jsonResponse(data, status = 200) {
   };
 }
 
+function createMemoryStorage() {
+  const values = new Map();
+
+  return {
+    clear: vi.fn(() => values.clear()),
+    getItem: vi.fn((key) => values.get(String(key)) ?? null),
+    key: vi.fn((index) => Array.from(values.keys())[index] ?? null),
+    removeItem: vi.fn((key) => values.delete(String(key))),
+    setItem: vi.fn((key, value) => values.set(String(key), String(value))),
+    get length() {
+      return values.size;
+    }
+  };
+}
+
 export async function loadApp(fetchMock = vi.fn()) {
   vi.resetModules();
 
@@ -21,8 +36,16 @@ export async function loadApp(fetchMock = vi.fn()) {
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
   `;
 
-  localStorage.clear();
-  localStorage.setItem("aroma_api_base", "");
+  const storage = createMemoryStorage();
+  Object.defineProperty(window, "localStorage", {
+    configurable: true,
+    value: storage
+  });
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: storage
+  });
+  window.localStorage.setItem("aroma_api_base", "");
   window.location.hash = "";
 
   window.Telegram = {

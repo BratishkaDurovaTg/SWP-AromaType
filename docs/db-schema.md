@@ -5,6 +5,7 @@
 - id
 - name
 - brand
+- gender
 - image_url
 - price
 - volume_options
@@ -64,7 +65,9 @@
   `psych_aesthetic`, and all `D` answers map to `psych_power`.
 - Each fragrance stores one primary psychotype in `psychotype`:
   `drive`, `focus`, `aesthetic`, `power`, or `balanced`.
-- Each fragrance also stores a flexible 0-100 score vector in `psychotype_scores`:
+- Each fragrance stores `gender`: `male`, `female`, or `unisex`.
+- Each fragrance also stores a 0-100 score vector in `psychotype_scores`.
+  The four values must sum to exactly 100:
   `drive`, `focus`, `aesthetic`, and `power`.
 - The backend builds a user psychotype profile from selected answer options.
 - Each active fragrance receives a score by comparing the user profile with the

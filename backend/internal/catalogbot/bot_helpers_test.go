@@ -48,7 +48,7 @@ func TestPromptsCoverKnownFieldsAndAddSteps(t *testing.T) {
 	}
 
 	for _, field := range []string{
-		"name", "brand", "price", "volumes", "description", "accords",
+		"name", "brand", "gender", "price", "volumes", "price_3ml", "price_5ml", "price_10ml", "description", "accords",
 		"top", "middle", "base", "psychotype", "scores", "active", "image_url", "unknown",
 	} {
 		if fieldPrompt(field) == "" {
@@ -73,40 +73,49 @@ func TestApplyFieldUpdatesAllEditableFields(t *testing.T) {
 		ID:         "miami-shake",
 		Name:       "Old",
 		Brand:      "Old Brand",
+		Gender:     questionnaire.GenderUnisex,
 		Price:      "100",
 		Psychotype: "balanced",
-		IsActive:   true,
+		PsychotypeScores: questionnaire.PsychotypeScores{
+			Drive: 25, Focus: 25, Aesthetic: 25, Power: 25,
+		},
+		IsActive: true,
 	}
 
-	updates := map[string]string{
-		"name":        "Miami Shake",
-		"brand":       "Juliette Has A Gun",
-		"price":       "8393",
-		"volumes":     "3:8393, 5:12990",
-		"description": "Summer fragrance",
-		"top":         "Клубника",
-		"middle":      "Мороженое",
-		"base":        "Абсолют ванили",
-		"accords":     "Сладкий, Фруктовый",
-		"psychotype":  "aesthetic",
-		"scores":      "drive:20, focus:35, aesthetic:90, power:25",
-		"active":      "no",
-		"image_url":   "/uploads/miami.jpg",
+	updates := []struct {
+		field string
+		value string
+	}{
+		{field: "name", value: "Miami Shake"},
+		{field: "brand", value: "Juliette Has A Gun"},
+		{field: "gender", value: "female"},
+		{field: "price", value: "8393"},
+		{field: "volumes", value: "3:8393, 5:12990, 10:18990"},
+		{field: "price_5ml", value: "13990"},
+		{field: "description", value: "Summer fragrance"},
+		{field: "top", value: "Клубника"},
+		{field: "middle", value: "Мороженое"},
+		{field: "base", value: "Абсолют ванили"},
+		{field: "accords", value: "Сладкий, Фруктовый"},
+		{field: "psychotype", value: "aesthetic"},
+		{field: "scores", value: "drive:20, focus:20, aesthetic:40, power:20"},
+		{field: "active", value: "no"},
+		{field: "image_url", value: "/uploads/miami.jpg"},
 	}
 
-	for field, value := range updates {
-		if err := applyField(&item, field, value); err != nil {
-			t.Fatalf("applyField(%q) returned error: %v", field, err)
+	for _, update := range updates {
+		if err := applyField(&item, update.field, update.value); err != nil {
+			t.Fatalf("applyField(%q) returned error: %v", update.field, err)
 		}
 	}
 
-	if item.Name != "Miami Shake" || item.Brand != "Juliette Has A Gun" || item.Price != "8393" {
+	if item.Name != "Miami Shake" || item.Brand != "Juliette Has A Gun" || item.Price != "8393" || item.Gender != "female" {
 		t.Fatalf("required fields were not updated: %#v", item)
 	}
-	if len(item.VolumeOptions) != 2 || item.VolumeOptions[0].VolumeML != 3 {
+	if len(item.VolumeOptions) != 3 || item.VolumeOptions[0].VolumeML != 3 || item.VolumeOptions[1].Price != 13990 {
 		t.Fatalf("volume options were not updated: %#v", item.VolumeOptions)
 	}
-	if item.Psychotype != "aesthetic" || item.PsychotypeScores.Aesthetic != 90 || item.IsActive {
+	if item.Psychotype != "aesthetic" || item.PsychotypeScores.Aesthetic != 40 || item.IsActive {
 		t.Fatalf("psychotype fields were not updated: %#v", item)
 	}
 	if item.ImageURL != "/uploads/miami.jpg" || len(item.MainAccords) != 2 {
@@ -119,15 +128,20 @@ func TestApplyFieldRejectsInvalidValues(t *testing.T) {
 		ID:         "miami-shake",
 		Name:       "Miami Shake",
 		Brand:      "Juliette Has A Gun",
+		Gender:     questionnaire.GenderFemale,
 		Price:      "8393",
 		Psychotype: "aesthetic",
+		PsychotypeScores: questionnaire.PsychotypeScores{
+			Drive: 20, Focus: 20, Aesthetic: 40, Power: 20,
+		},
 	}
 
 	for field, value := range map[string]string{
 		"price":      "-1",
 		"volumes":    "3",
+		"gender":     "unknown",
 		"psychotype": "unknown",
-		"scores":     "drive:120",
+		"scores":     "drive:30, focus:30, aesthetic:30, power:30",
 		"active":     "maybe",
 		"unknown":    "value",
 	} {
@@ -142,6 +156,7 @@ func TestValidateAndFormatFragrance(t *testing.T) {
 		ID:            "miami-shake",
 		Name:          "Miami Shake",
 		Brand:         "Juliette Has A Gun",
+		Gender:        questionnaire.GenderFemale,
 		Price:         "8393",
 		VolumeOptions: []questionnaire.VolumeOption{{VolumeML: 3, Price: 8393}},
 		Description:   "Summer fragrance",
@@ -150,7 +165,10 @@ func TestValidateAndFormatFragrance(t *testing.T) {
 		BaseNotes:     []string{"Абсолют ванили"},
 		MainAccords:   []string{"Сладкий"},
 		Psychotype:    "aesthetic",
-		IsActive:      true,
+		PsychotypeScores: questionnaire.PsychotypeScores{
+			Drive: 20, Focus: 20, Aesthetic: 40, Power: 20,
+		},
+		IsActive: true,
 	}
 	if err := validateFragrance(item); err != nil {
 		t.Fatalf("validateFragrance returned error: %v", err)
