@@ -35,3 +35,29 @@
   - TPBI-07: Changing the algorithm ([#45](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/45))
 
 ---
+
+## Sprint 3 (30 June – 6 July 2026)
+
+- **Milestone:** [Sprint 3](https://github.com/BratishkaDurovaTg/SWP-AromaType/milestone/3)
+- **Sprint Goal:** Fix bugs identified during MVP v2 testing and implement customer feedback on UI and UX.
+- **Expected outcome:** A more polished Telegram Mini App with customer-approved UI improvements and critical bug fixes.
+- **Planned items:**
+  - BUG-04: Remove "Delivery included" label from recommendations ([#62](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/62))
+  - BUG-05: Fix low psychotype percentage bar color ([#63](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/63))
+  - Customer feedback: UI refinements and usability improvements
+
+---
+
+## Sprint 4 (7–12 July 2026)
+
+- **Milestone:** [Sprint 4](https://github.com/BratishkaDurovaTg/SWP-AromaType/milestone/4)
+- **Sprint Goal:** Complete trial release, fix remaining MVP v2 bugs, prepare technical documentation, and transition the product to the customer.
+- **Expected outcome:** A stable trial release ready for customer handover with all critical bugs resolved and technical documentation completed.
+- **Planned items:**
+  - BUG-01: Fix "only Female" gender filter in product card ([#59](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/59))
+  - BUG-02: Validate psychotype points sum (must equal 100) ([#60](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/60))
+  - BUG-03: Fix price update by volume in product card ([#61](https://github.com/BratishkaDurovaTg/SWP-AromaType/issues/61))
+  - Complete technical documentation
+  - fixing bugs
+  - preparing for handover
+  - confirming techical details with customer
