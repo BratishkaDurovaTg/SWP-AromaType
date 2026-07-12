@@ -27,3 +27,19 @@ A Product Backlog Item (PBI) may be marked as **Done** only when all of the foll
 12. For implementation and technical PBIs, the linked pull request has been merged into the protected default branch.
 
 13. The Product Backlog Item Work Status has been updated to **Done**.
+
+---
+
+## Handover and Customer-Readiness Criteria
+
+A PBI is considered fully **Done** for Assignment 6 only when the following handover-related conditions are also satisfied:
+
+- **Customer-facing documentation** — `README.md`, `docs/customer-handover.md`, and relevant access/run instructions are updated to reflect the current product state.
+
+- **Deployment** — the changes are deployed to the production environment (University VM) and accessible via the public Mini App URL.
+
+- **Customer notification** — the customer is informed of any changes that affect their use of the product, deployment steps, or configuration.
+
+- **Handover readiness** — for infrastructure or credentials-related tasks (domain, bot tokens, VPS access), the customer has received the necessary access or the transfer is explicitly documented and pending.
+
+> **Note:** A PBI that changes deployment steps, environment variables, or external services (Telegram bots, domain, VPS) must include a corresponding update to `docs/customer-handover.md` before it can be marked `Done`.
