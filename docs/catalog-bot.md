@@ -64,7 +64,7 @@ toggling `is_active`, and returning to the catalog.
 /set miami-shake volumes 3:8393, 5:11990, 10:18990
 /set miami-shake top клубника, бергамот
 /set miami-shake psychotype aesthetic
-/set miami-shake scores drive:20, focus:20, aesthetic:40, power:20
+/set miami-shake scores 20,20,40,20
 /set miami-shake active yes
 /photo miami-shake
 ```

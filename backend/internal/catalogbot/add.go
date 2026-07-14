@@ -57,7 +57,7 @@ func addPrompt(step int) string {
 	case addStepPsychotype:
 		return "Психотип: drive, focus, aesthetic, power или balanced."
 	case addStepScores:
-		return "Scores: drive:20, focus:20, aesthetic:40, power:20. Сумма должна быть 100."
+		return "Очки для психотипов в порядке drive, focus, aesthetic, power. Введите 4 числа через запятую без пробелов, например 20,20,40,20. Сумма должна быть 100."
 	case addStepActive:
 		return "Активен? yes/no"
 	case addStepPhoto:
@@ -130,7 +130,7 @@ func (b *Bot) handleAddStep(ctx context.Context, chatID int64, s *session, text 
 	case addStepScores:
 		scores, err := parseScores(text)
 		if err != nil {
-			return b.telegram.sendMessage(ctx, chatID, "Формат scores: drive:20, focus:20, aesthetic:40, power:20. Сумма должна быть 100.")
+			return b.telegram.sendMessage(ctx, chatID, "Формат очков психотипов: 20,20,40,20. Это 4 числа через запятую без пробелов в порядке drive, focus, aesthetic, power. Сумма должна быть 100.")
 		}
 		s.draft.PsychotypeScores = scores
 	case addStepActive:
