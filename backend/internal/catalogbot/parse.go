@@ -13,6 +13,7 @@ import (
 var (
 	errInvalidValue = errors.New("invalid value")
 	idPattern       = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{1,80}$`)
+	scoresPattern   = regexp.MustCompile(`^\d{1,3},\d{1,3},\d{1,3},\d{1,3}$`)
 )
 
 func splitList(value string) []string {
@@ -79,8 +80,13 @@ func parseVolumes(value string) ([]questionnaire.VolumeOption, error) {
 
 func parseScores(value string) (questionnaire.PsychotypeScores, error) {
 	var scores questionnaire.PsychotypeScores
-	if strings.TrimSpace(value) == "" {
+	value = strings.TrimSpace(value)
+	if value == "" {
 		return scores, errInvalidValue
+	}
+
+	if !strings.Contains(value, ":") {
+		return parseOrderedScores(value)
 	}
 
 	for _, part := range splitList(value) {
@@ -105,6 +111,34 @@ func parseScores(value string) (questionnaire.PsychotypeScores, error) {
 		default:
 			return scores, fmt.Errorf("%w: unknown score key %q", errInvalidValue, key)
 		}
+	}
+	if scores.Drive+scores.Focus+scores.Aesthetic+scores.Power != 100 {
+		return scores, fmt.Errorf("%w: scores sum must be 100", errInvalidValue)
+	}
+	return scores, nil
+}
+
+func parseOrderedScores(value string) (questionnaire.PsychotypeScores, error) {
+	var scores questionnaire.PsychotypeScores
+	if !scoresPattern.MatchString(value) {
+		return scores, fmt.Errorf("%w: scores must use 20,20,40,20 format", errInvalidValue)
+	}
+
+	parts := strings.Split(value, ",")
+	values := make([]int, len(parts))
+	for index, part := range parts {
+		score, err := strconv.Atoi(part)
+		if err != nil || score < 0 || score > 100 {
+			return scores, errInvalidValue
+		}
+		values[index] = score
+	}
+
+	scores = questionnaire.PsychotypeScores{
+		Drive:     values[0],
+		Focus:     values[1],
+		Aesthetic: values[2],
+		Power:     values[3],
 	}
 	if scores.Drive+scores.Focus+scores.Aesthetic+scores.Power != 100 {
 		return scores, fmt.Errorf("%w: scores sum must be 100", errInvalidValue)

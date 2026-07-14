@@ -28,7 +28,7 @@ var editableFields = []editableField{
 	{key: "middle", label: "Средние ноты"},
 	{key: "base", label: "Базовые ноты"},
 	{key: "psychotype", label: "Психотип"},
-	{key: "scores", label: "Scores"},
+	{key: "scores", label: "Очки психотипов"},
 	{key: "active", label: "Активность"},
 	{key: "image_url", label: "URL фото"},
 }

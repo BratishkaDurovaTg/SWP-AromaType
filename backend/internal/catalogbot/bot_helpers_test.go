@@ -98,7 +98,7 @@ func TestApplyFieldUpdatesAllEditableFields(t *testing.T) {
 		{field: "base", value: "Абсолют ванили"},
 		{field: "accords", value: "Сладкий, Фруктовый"},
 		{field: "psychotype", value: "aesthetic"},
-		{field: "scores", value: "drive:20, focus:20, aesthetic:40, power:20"},
+		{field: "scores", value: "20,20,40,20"},
 		{field: "active", value: "no"},
 		{field: "image_url", value: "/uploads/miami.jpg"},
 	}
@@ -141,7 +141,7 @@ func TestApplyFieldRejectsInvalidValues(t *testing.T) {
 		"volumes":    "3",
 		"gender":     "unknown",
 		"psychotype": "unknown",
-		"scores":     "drive:30, focus:30, aesthetic:30, power:30",
+		"scores":     "30,30,30,30",
 		"active":     "maybe",
 		"unknown":    "value",
 	} {
