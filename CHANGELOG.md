@@ -1,14 +1,21 @@
 # Changelog
 
-All notable changes to AromaType are documented in this file.
+All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+No unreleased user-visible changes.
 
-### Added
+## [v1.4.0] - 2026-07-20
 
-- Follow-up improvements planned for the final MVP v3 release.
+### Changed
+- Removed recommendation category filters from the recommendations page.
+- Improved cart scrolling so all items remain visible above the checkout button.
+- Improved checkout validation by displaying an error message when required fields are empty.
 
----
+### Fixed
+- Removed unnecessary category filters displayed under "Ваша подборка".
+- Fixed cart items appearing behind the "Оформить заказ" button.
+- Fixed checkout validation by showing "Не все данные введены" when required fields are missing.
 
 ## [v1.3.0] - 2026-07-12
 
