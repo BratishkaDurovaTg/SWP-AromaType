@@ -7,7 +7,7 @@ style, situations, and feelings rather than perfume terminology. Users complete
 a guided questionnaire, receive up to 5 recommended fragrances with explanations,
 and order sample sets through a configured Telegram contact.
 
-- **Current version:** MVP v3 (v1.3.0)
+- **Current version:** MVP v3 (v1.4.0)
 - **Handover level:** Ready for independent use
 - **Customer-confirmation status:** Accepted with follow-up items
 
@@ -16,7 +16,7 @@ and order sample sets through a configured Telegram contact.
 | What | How |
 |---|---|
 | Telegram Mini App | Open the bot [@aroma_type_test_bot](https://t.me/aroma_type_test_bot) in Telegram and launch the Mini App from the menu or inline button. |
-| Production web | The frontend and API are served at [https://aroma-type.shop](https://aroma-type.shop). |
+| Production web | The frontend and API are served at [https://aromatypes.serveousercontent.com](https://aromatypes.serveousercontent.com). |
 | Admin — Catalog Bot | A separate password-protected Telegram bot for adding, editing, toggling, and uploading photos of fragrances. Access requires the bot token and password (not yet transferred — see [Remaining Actions](#remaining-actions)). |
 | Source code | Public GitHub repository: [https://github.com/BratishkaDurovaTg/SWP-AromaType](https://github.com/BratishkaDurovaTg/SWP-AromaType) (MIT License). |
 
@@ -41,9 +41,10 @@ and order sample sets through a configured Telegram contact.
 | Item | Status | Notes |
 |---|---|---|
 | Source repository | Public and accessible | The repository is public under MIT License. The customer can fork or clone at any time. |
-| Production VPS and domain (`aroma-type.shop`) | Retained by team — planned for transfer | Access and ownership have not yet been transferred. The team currently manages the server, DNS, and Caddy configuration. |
-| Telegram Mini App bot (`@aroma_type_test_bot`) | Retained by team | The bot is registered under the team's Telegram account. BotFather settings and the Mini App URL are managed by the team. |
-| Catalog admin bot | Not transferred | The catalog bot token (`CATALOG_BOT_TOKEN`) and password (`CATALOG_BOT_PASSWORD`) are held by the team and have not been shared with the customer. |
+| Source code and repository | To be transferred via private channel | The customer confirmed that source code (frontend, backend, admin components) is the primary deliverable. Repository access and a source code archive will be shared through a private channel. |
+| Production VPS and domain | Retained by team — customer deprioritised | The customer explicitly confirmed that deployment activities are not a priority. The team retains server, DNS, and Caddy configuration. |
+| Telegram Mini App bot (`@aroma_type_test_bot`) | Retained by team — to be transferred | The bot is registered under the team's Telegram account. BotFather settings, bot token, and Mini App URL will be transferred through a private channel. |
+| Catalog admin bot | To be transferred | The catalog bot token (`CATALOG_BOT_TOKEN`) and password (`CATALOG_BOT_PASSWORD`) will be shared through a private channel. |
 | Database | Retained by team | The PostgreSQL database runs on the team-managed VPS. No database access has been provided. |
 | CI/CD pipelines | Retained by team | GitHub Actions workflows are configured under the team's GitHub organisation. |
 
@@ -85,8 +86,7 @@ Below is a summary of the steps a new operator would follow:
 1. **Provision a server** — Ubuntu 22.04 with Docker and the Compose plugin installed.
 2. **Open firewall ports** — `22` (SSH), `80` (HTTP), `443` (HTTPS).
 3. **Clone the repository** to the server (e.g., `/opt/aromatype`).
-4. **Configure DNS** — Point `aroma-type.shop` and `www.aroma-type.shop` to the
-   server's public IP.
+4. **Configure DNS** — Point the domain to the server's public IP.
 5. **Create the environment file** — Copy `.env.production.example` to `/opt/aromatype/.env`
    and fill in all values.
 6. **Start the services**:
@@ -95,9 +95,9 @@ Below is a summary of the steps a new operator would follow:
    ```
 7. **Verify the deployment**:
    ```bash
-   curl -fsS https://aroma-type.shop/health
+   curl -fsS https://aromatypes.serveousercontent.com/health
    ```
-8. **Set the Mini App URL** in BotFather to `https://aroma-type.shop`.
+8. **Set the Mini App URL** in BotFather to `https://aromatypes.serveousercontent.com`.
 9. **Start the catalog bot** (optional — only when catalog management is needed):
    ```bash
    docker compose -f docker-compose.prod.yml --env-file .env --profile catalogbot up -d --build catalogbot
@@ -118,7 +118,7 @@ Below is a summary of the steps a new operator would follow:
 ## Operational Notes
 
 - The back end serves a REST API documented in [`docs/api/openapi.yaml`](api/openapi.yaml).
-  Swagger UI is available at `https://aroma-type.shop/docs`.
+  Swagger UI is available at `https://aromatypes.serveousercontent.com/docs`.
 - The front end is a static single-page application served by Caddy. No build step
   is required on the server — Caddy serves the files directly from the repository.
 - The recommendation engine is rule-based (psychotype scoring across four tags:
@@ -146,38 +146,43 @@ for the items that remain under team control (see [Remaining Actions](#remaining
 
 The following limitations and unfinished areas are known:
 
-- **No error pop-up in cart** — When an operation in the cart fails (e.g., adding
-  an item with invalid data), no visual error message is shown to the user.
-- **Psychotype points in `/add` command** — The `/add` command in the catalog bot
-  asks about scores for four psychotype tags (drive, focus, aesthetic, power) in a
-  way that could be clearer and more user-friendly. A redesigned input flow would
-  improve the admin experience.
-- **Product image duplication** — The product image is rendered twice in the product
-  card view. This is a visual bug that does not affect functionality.
 - **No automated database backups** — The current production deployment does not
   include a scheduled backup mechanism for the PostgreSQL database.
+- **Administrator documentation pending** — A written guide for psychotype
+  assignment and catalog bot usage is still in progress.
 - **Minor UI refinements** — Several small UI improvements (input validation for
-  phone/email, location display, cart behaviour) were identified during earlier
-  Sprints and remain in the backlog.
+  phone/email, location display) were identified during earlier Sprints and
+  remain in the backlog.
 
 ## Remaining Actions
 
-| Action | Type | Blocks full transition? |
-|---|---|---|
-| Transfer VPS and domain access to the customer | Deployment/ownership | Yes — without server and domain access, the customer cannot operate the product independently. |
-| Transfer Telegram BotFather management | Account/ownership | Yes — the Mini App URL and bot token must be under customer control. |
-| Transfer catalog bot token and password | Access/credentials | Yes — the customer needs admin access to manage fragrances. |
-| Fix error pop-up in cart | Bug fix | No — the product is usable; this is a UX follow-up. |
-| Redesign psychotype input in `/add` command | Usability improvement | No — the current flow works; it is not a blocker. |
-| Fix duplicate product image in product card | Bug fix | No — cosmetic issue, does not affect the core workflow. |
-| Set up automated database backups | Operational | Recommended — not a hard blocker for independent use. |
+| Action | Type | Blocks full transition? | Status |
+|---|---|---|---|
+| Transfer source code and repository access via private channel | Access/transfer | Yes — the customer needs the complete source code and admin components. | Pending — discussed, not yet executed |
+| Transfer Telegram BotFather management and bot token | Account/ownership | Yes — the Mini App URL and bot token must be under customer control. | Pending — to be shared privately |
+| Transfer catalog bot token and password | Access/credentials | Yes — the customer needs admin access to manage fragrances. | Pending — to be shared privately |
+| Complete administrator documentation for psychotype assignment | Documentation | No — functional handover is accepted without it. | In progress |
+| Set up automated database backups | Operational | No — customer deprioritised infrastructure. | Not started |
+| Record public sanitized demo video for MVP v3 | Artifact | No — does not affect transition. | Not started |
 
 ### Blocker Classification
 
 All remaining blockers are on the **team side** — the team has not yet completed
-the transfer of access, credentials, and ownership items. The product itself is
-stable and ready for independent use, and the customer has accepted it with the
-understanding that these follow-up items will be completed.
+the transfer of access, credentials, and source code items. The product itself is
+stable and ready for independent use. The customer confirmed during the Week 7
+Sprint Review that deployment activities are not a priority and accepted the
+current handover approach (source code transfer via private channel).
+
+### Resolved During Sprint 5
+
+The following issues from the Week 6 trial were fixed in Sprint 5:
+
+| Issue | Resolution |
+|---|---|
+| No error pop-up in cart | Checkout validation now displays "Не все данные введены" when required fields are empty. |
+| Duplicate product image in product card | Fixed — images no longer render twice. |
+| Psychotype input in `/add` command | Redesigned — administrators now enter four comma-separated values totalling 100. |
+| Cart items hidden behind checkout button | Cart scrolling improved so all items remain visible. |
 
 ## Documentation Entry Points
 
@@ -212,6 +217,7 @@ are completed.
 Areas where documentation could be strengthened:
 - Database backup and recovery procedures are not yet documented.
 - Monitoring and alerting setup is not covered.
+- Administrator documentation for psychotype assignment is still in progress.
 
 These gaps do not block the current handover level but should be addressed before
 full operational independence.
