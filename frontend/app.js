@@ -156,7 +156,6 @@ const state = {
   selectedAnswers: new Map(),
   currentQuestionIndex: 0,
   recommendations: null,
-  activeFilter: "all",
   selectedProduct: null,
   selectedVolumeIndex: 0,
   // Твой старый cartItems (оставляем, чтобы старые экшены не падали)
@@ -348,7 +347,6 @@ async function submitRecommendations() {
       delay(1300),
     ]);
     state.recommendations = recommendations;
-    state.activeFilter = "all";
     navigate("profile");
   } catch (error) {
     renderState("Не удалось собрать подборку", error.message, "quiz");
@@ -420,10 +418,6 @@ function renderResults() {
   }
 
   const { profile, items, totalItems } = state.recommendations;
-  const filters = unique(["all", ...items.flatMap((item) => item.mainAccords || [])]).slice(0, 4);
-  const visibleItems = state.activeFilter === "all"
-    ? items
-    : items.filter((item) => (item.mainAccords || []).includes(state.activeFilter));
 
   phone(`
     <section class="screen podbor-screen screen-with-footer">
@@ -442,12 +436,8 @@ function renderResults() {
       <p class="podbor-copy">Каждый аромат выбран под ваш тип — чистый, лёгкий, сдержанный.</p>
       <div class="divider"></div>
 
-      <div class="filters">
-        ${filters.map((filter) => `<button class="chip ${state.activeFilter === filter ? "active" : ""}" data-action="filter" data-filter="${escapeAttr(filter)}" type="button">${filter === "all" ? "Все" : escapeHTML(capitalize(filter))}</button>`).join("")}
-      </div>
-
       <div class="card-list">
-        ${visibleItems.length ? visibleItems.map((item, index) => renderRecommendationCard(item, index)).join("") : `<p class="small-copy">В этой категории пока нет ароматов.</p>`}
+        ${items.length ? items.map((item, index) => renderRecommendationCard(item, index)).join("") : `<p class="small-copy">В подборке пока нет ароматов.</p>`}
       </div>
       <div class="bottom-actions">
         <button class="btn" data-action="open-cart" type="button">Перейти в корзину</button>
@@ -542,7 +532,6 @@ function renderProductLoaded() {
       </div>
 
       <div class="product-buy-layout">
-        ${renderImage(product.imageUrl, product.name, "product-detail-image")}
         <div class="volume-box">
           <div class="volume-title">Объем / мл</div>
           <div class="volume-options">
@@ -812,10 +801,6 @@ function handleClick(event) {
     state.order.address.city = target.dataset.city || "";
     saveOrder();
     renderAddressForm();
-  }
-  if (action === "filter") {
-    state.activeFilter = target.dataset.filter;
-    renderResults();
   }
 }
 
@@ -1360,10 +1345,6 @@ function imageURL(value) {
   if (!value) return "";
   if (/^(https?:|data:|blob:)/.test(value)) return value;
   return `${state.apiBase}${value}`;
-}
-
-function unique(values) {
-  return Array.from(new Set(values.filter(Boolean)));
 }
 
 function capitalize(value) {

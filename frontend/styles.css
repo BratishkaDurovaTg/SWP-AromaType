@@ -704,7 +704,7 @@ button {
 }
 
 .profile-bar:first-child .profile-bar-fill {
-  background: var(--pink);
+  background: var(--olive);
 }
 
 .profile-bar-label {
@@ -902,7 +902,7 @@ button {
   position: relative;
   min-height: 200px;
   display: grid;
-  grid-template-columns: 92px 1fr;
+  grid-template-columns: 92px minmax(0, 1fr) 42px;
   gap: 14px;
   padding: 14px;
   border: 1px solid rgba(69, 55, 50, 0.16);
@@ -913,7 +913,7 @@ button {
 
 .card-number {
   position: absolute;
-  right: 10px;
+  right: 62px;
   bottom: 14px;
   color: rgba(201, 190, 170, 0.36);
   font-family: var(--display);
@@ -1343,9 +1343,11 @@ button {
 }
 
 .card-add-btn {
-  position: absolute;
-  left: 48px;
-  bottom: 26px;
+  position: static;
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: start;
   z-index: 5;
   width: 34px;
   height: 34px;
@@ -1359,15 +1361,15 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transform: scale(0.86);
+  opacity: 1;
+  transform: none;
   transition: opacity 180ms ease, transform 180ms ease, background 180ms ease;
   backdrop-filter: blur(10px);
 }
 
 .fragrance-card:hover .card-add-btn {
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(-1px);
 }
 
 .card-add-btn:active {
@@ -1378,7 +1380,7 @@ button {
 @media (hover: none) {
   .card-add-btn {
     opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
 }
 
@@ -1419,16 +1421,10 @@ button {
 
 .product-buy-layout {
   display: grid;
-  grid-template-columns: 170px 1fr;
-  grid-template-rows: auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   column-gap: 14px;
   align-items: start;
   margin: 8px 0 22px;
-}
-
-.product-buy-layout .product-detail-image {
-  grid-row: 1 / 3;
-  justify-self: center;
 }
 
 .product-purchase {
