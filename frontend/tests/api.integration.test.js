@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from "@testing-library/dom";
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { jsonResponse, loadApp } from "./testUtils.js";
 
@@ -147,6 +148,7 @@ describe("Aroma Type frontend API integration", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Показать мои ароматы/i }));
 
+    expect(document.querySelector(".filters")).not.toBeInTheDocument();
     expect(screen.getAllByText("Mystic Night").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Fresh Office").length).toBeGreaterThan(0);
 
@@ -158,12 +160,16 @@ describe("Aroma Type frontend API integration", () => {
     const addButtons = document.querySelectorAll(".card-add-btn");
     expect(addButtons).toHaveLength(2);
 
+    fireEvent.click(addButtons[0]);
+    expect(screen.getByText("Аромат добавлен в корзину")).toBeInTheDocument();
+
     fireEvent.click(screen.getAllByText("Mystic Night")[0]);
 
     await waitFor(() => {
       expect(screen.getByText("для женщин")).toBeInTheDocument();
     });
 
+    expect(document.querySelectorAll(".product-detail-image")).toHaveLength(1);
     expect(screen.getByText("8 393 ₽")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "5" }));
@@ -171,5 +177,12 @@ describe("Aroma Type frontend API integration", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: /Добавить/i })[0]);
     expect(screen.getByText("Аромат добавлен в корзину")).toBeInTheDocument();
+  });
+
+  it("does not color the first psychotype bar pink", () => {
+    const styles = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+    const firstProfileBarRule = styles.match(/\.profile-bar:first-child\s+\.profile-bar-fill\s*\{[^}]*\}/)?.[0] || "";
+
+    expect(firstProfileBarRule).not.toContain("var(--pink)");
   });
 });

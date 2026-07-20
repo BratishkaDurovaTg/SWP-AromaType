@@ -329,7 +329,7 @@ func editHelp(id string) string {
 /set %[1]s volumes 3:8393, 5:11990, 10:18990
 /set %[1]s top клубника, бергамот
 /set %[1]s psychotype aesthetic
-/set %[1]s scores drive:20, focus:20, aesthetic:40, power:20
+/set %[1]s scores 20,20,40,20
 /set %[1]s active yes
 /photo %[1]s`, id)
 }
@@ -449,7 +449,7 @@ func fieldPrompt(field string) string {
 	case "psychotype":
 		return "Введите психотип: drive, focus, aesthetic, power или balanced."
 	case "scores":
-		return "Введите scores: drive:20, focus:20, aesthetic:40, power:20. Сумма должна быть 100."
+		return "Введите очки для психотипов в порядке drive, focus, aesthetic, power. Формат: 20,20,40,20 — 4 числа через запятую без пробелов. Сумма должна быть 100."
 	case "active":
 		return "Активен товар? yes/no."
 	case "image_url":
@@ -580,7 +580,7 @@ func formatFragrance(item questionnaire.Fragrance) string {
 Объемы: %s
 Active: %t
 Психотип: %s
-Scores: drive=%d focus=%d aesthetic=%d power=%d
+Очки психотипов: drive=%d focus=%d aesthetic=%d power=%d
 Фото: %s
 Аккорды: %s
 Верхние: %s
